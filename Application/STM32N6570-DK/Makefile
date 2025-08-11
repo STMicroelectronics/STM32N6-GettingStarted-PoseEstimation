@@ -30,14 +30,9 @@ C_SOURCES += Src/main.c
 C_SOURCES += Src/syscalls.c
 C_SOURCES += Src/app_fuseprogramming.c
 C_SOURCES += $(wildcard ../../Middlewares/ai-postprocessing-wrapper/*.c)
+C_SOURCES += $(wildcard ../../Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/*.c)
 C_SOURCES += Src/display_mpe.c
 C_SOURCES += Src/display_spe.c
-C_SOURCES += ../../Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/mpe_pp_yolov8.c
-C_SOURCES += ../../Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/spe_movenet_pp.c
-C_SOURCES += ../../Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/vision_models_pp.c
-C_SOURCES += ../../Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/vision_models_pp_maxi_if32.c
-C_SOURCES += ../../Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/vision_models_pp_maxi_is8.c
-C_SOURCES += ../../Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/vision_models_pp_maxi_iu8.c
 C_SOURCES += Src/stm32_lcd_ex.c
 C_SOURCES += Src/stm32n6xx_it.c
 C_SOURCES += ../../Middlewares/AI_Runtime/Npu/Devices/STM32N6XX/mcu_cache.c
@@ -187,7 +182,7 @@ CFLAGS += -std=gnu11
 LDSCRIPT = STM32CubeIDE/STM32N657xx.ld
 
 # libraries
-LIBS = -lc -lm -lnosys -l:NetworkRuntime1010_CM55_GCC.a -ln6-evision-awb_gcc -ln6-evision-st-ae_gcc
+LIBS = -lc -lm -lnosys -l:NetworkRuntime1020_CM55_GCC.a -ln6-evision-awb_gcc -ln6-evision-st-ae_gcc
 LIBDIR = -L../../Middlewares/AI_Runtime/Lib/GCC/ARMCortexM55
 LIBDIR += -L../../Middlewares/Camera_Middleware/ISP_Library/evision/Lib
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections

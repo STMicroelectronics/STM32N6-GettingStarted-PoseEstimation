@@ -72,9 +72,9 @@
 			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_mpe_pd_uf.c</locationURI>
 		</link>
 		<link>
-			<name>Application/app_postprocess_mpe_yolo_v8_uf.c</name>
+			<name>Application/app_postprocess_mpe_yolo_v8_ui.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_mpe_yolo_v8_uf.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_mpe_yolo_v8_ui.c</locationURI>
 		</link>
 		<link>
 			<name>Application/app_postprocess_od_st_ssd_uf.c</name>
@@ -82,14 +82,14 @@
 			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_od_st_ssd_uf.c</locationURI>
 		</link>
 		<link>
-			<name>Application/app_postprocess_od_st_yolox_uf.c</name>
+			<name>Application/app_postprocess_od_st_yolox_ui.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_od_st_yolox_uf.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_od_st_yolox_ui.c</locationURI>
 		</link>
 		<link>
-			<name>Application/app_postprocess_od_yolov2_uf.c</name>
+			<name>Application/app_postprocess_od_yolov2_ui.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_od_yolov2_uf.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_od_yolov2_ui.c</locationURI>
 		</link>
 		<link>
 			<name>Application/app_postprocess_od_yolov5_uu.c</name>
@@ -97,24 +97,19 @@
 			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_od_yolov5_uu.c</locationURI>
 		</link>
 		<link>
-			<name>Application/app_postprocess_od_yolov8_uf.c</name>
-			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_od_yolov8_uf.c</locationURI>
-		</link>
-		<link>
 			<name>Application/app_postprocess_od_yolov8_ui.c</name>
 			<type>1</type>
 			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_od_yolov8_ui.c</locationURI>
 		</link>
 		<link>
-			<name>Application/app_postprocess_spe_movenet_uf.c</name>
+			<name>Application/app_postprocess_spe_movenet_ui.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_spe_movenet_uf.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_spe_movenet_ui.c</locationURI>
 		</link>
 		<link>
-			<name>Application/app_postprocess_sseg_deeplab_v3_uf.c</name>
+			<name>Application/app_postprocess_sseg_deeplab_v3_ui.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_sseg_deeplab_v3_uf.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_sseg_deeplab_v3_ui.c</locationURI>
 		</link>
 		<link>
 			<name>Application/crop_img.c</name>

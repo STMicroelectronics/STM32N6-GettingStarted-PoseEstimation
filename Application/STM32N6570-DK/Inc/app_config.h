@@ -20,6 +20,7 @@
 #define APP_CONFIG
 
 #include "arm_math.h"
+#include "stm32_lcd.h"
 
 #define USE_DCACHE
 
@@ -32,7 +33,7 @@
 #define ASPECT_RATIO_MODE ASPECT_RATIO_CROP
 
 /* Model Related Info */
-#define POSTPROCESS_TYPE    POSTPROCESS_SPE_MOVENET_UF
+#define POSTPROCESS_TYPE    POSTPROCESS_SPE_MOVENET_UI
 
 #define NN_WIDTH      (192)
 #define NN_HEIGHT     (192)
@@ -48,7 +49,24 @@
 
 /* Post processing values */
 #define AI_POSE_PP_CONF_THRESHOLD           (0.5f)
-#define AI_POSE_PP_POSE_KEYPOINTS_NB        (13) /* Movenet: 13 or 17 keypoints ; YOLOv8 pose: 17 keypoints */
+#define AI_POSE_PP_POSE_KEYPOINTS_NB        (13)
+
+static const int bindings[][3] = {
+    { 11, 9, UTIL_LCD_COLOR_ORANGE },
+    { 9, 7, UTIL_LCD_COLOR_ORANGE },
+    { 12, 10, UTIL_LCD_COLOR_ORANGE },
+    { 10, 8, UTIL_LCD_COLOR_ORANGE },
+    { 7, 8, UTIL_LCD_COLOR_MAGENTA },
+    { 1, 7, UTIL_LCD_COLOR_MAGENTA },
+    { 2, 8, UTIL_LCD_COLOR_MAGENTA },
+    { 0, 1, UTIL_LCD_COLOR_GREEN },
+    { 0, 2, UTIL_LCD_COLOR_GREEN },
+    { 1, 2, UTIL_LCD_COLOR_BLUE },
+    { 1, 3, UTIL_LCD_COLOR_BLUE },
+    { 2, 4, UTIL_LCD_COLOR_BLUE },
+    { 3, 5, UTIL_LCD_COLOR_BLUE },
+    { 4, 6, UTIL_LCD_COLOR_BLUE },
+};
 
 /* Display */
 #define WELCOME_MSG_1         "st_movenet_lightning_heatmaps_192_int8_pc.tflite"

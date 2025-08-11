@@ -7,6 +7,19 @@ It allows to simplify the usage of it in the use case of app using multiple type
 
 ## Update history
 
+### V1.0.6 / July 2025
+
+Add int8 post processing support for:
+- Object detection Yolo v2
+- Object detection Yolo v8
+- Object detection ST Yolo X
+- Single pose estimation Movenet
+- Multi pose estimation Yolo v8
+- Semantic segmentation Deeplab v3
+
+Add support for BlazeFace post processing
+
 ### V1.0.2 / April 2025
 
 Initial Release
+

@@ -19,7 +19,6 @@
 #include "display_mpe.h"
 #include "app_config.h"
 #include "main.h"
-#include "display_keypoints_17.h"
 #include "utils.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -101,6 +100,9 @@ static void Display_binding(mpe_pp_keyPoints_t *from, mpe_pp_keyPoints_t *to, ui
       Display_binding_line(x0, y0 - i, x1 , y1 - i, color);
     }
   }
+
+  Display_keypoint(from, color);
+  Display_keypoint(to, color);
 }
 
 void Display_mpe_InitFunctions(int clamp_point_init(int *x, int *y),
@@ -133,8 +135,10 @@ void Display_mpe_Detection(mpe_pp_outBuffer_t *detect)
 
   UTIL_LCD_DrawRect(x0, y0, x1 - x0, y1 - y0, colors[detect->class_index % NUMBER_COLORS]);
 
-  for (i = 0; i < ARRAY_NB(bindings); i++)
-    Display_binding(&detect->pKeyPoints[bindings[i][0]], &detect->pKeyPoints[bindings[i][1]], bindings[i][2]);
-  for (i = 0; i < AI_POSE_PP_POSE_KEYPOINTS_NB; i++)
-    Display_keypoint(&detect->pKeyPoints[i], kp_color[i]);
+  if (bindings)
+    for (i = 0; i < ARRAY_NB(bindings); i++)
+      Display_binding(&detect->pKeyPoints[bindings[i][0]], &detect->pKeyPoints[bindings[i][1]], bindings[i][2]);
+  else
+    for (i = 0; i < AI_POSE_PP_POSE_KEYPOINTS_NB; i++)
+      Display_keypoint(&detect->pKeyPoints[i], DEFAULT_KEYPOINTS_COLOR);
 }

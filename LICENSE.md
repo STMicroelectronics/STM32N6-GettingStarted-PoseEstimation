@@ -19,7 +19,7 @@
 | Middlewares/lib_vision_models_pp/lib_vision_models_pp  | STMicroelectronics                    | SLA0044
 | Middlewares/screenl                                    | STMicroelectronics                    | SLA0044
 | Middlewares/screenl/uvcl                               | STMicroelectronics                    | SLA0044
-| Binary                                                 | STMicroelectronics, Ultralytics       | SLA0044
+| Binary                                                 | STMicroelectronics                    | SLA0044
 | Inc                                                    | STMicroelectronics                    | SLA0044
 | Src                                                    | STMicroelectronics                    | SLA0044
 | Model                                                  | STMicroelectronics                    | SLA0044

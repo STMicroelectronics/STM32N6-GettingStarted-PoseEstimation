@@ -30,10 +30,8 @@
 #define CIRCLE_RADIUS 5
 /* Must be odd */
 #define BINDING_WIDTH 3
-#define COLOR_HEAD UTIL_LCD_COLOR_GREEN
-#define COLOR_ARMS UTIL_LCD_COLOR_BLUE
-#define COLOR_TRUNK UTIL_LCD_COLOR_MAGENTA
-#define COLOR_LEGS UTIL_LCD_COLOR_ORANGE
+
+#define DEFAULT_KEYPOINTS_COLOR UTIL_LCD_COLOR_ST_BLUE
 #define COLOR_BOX UTIL_LCD_COLOR_RED
 
 /* Exported functions ------------------------------------------------------- */

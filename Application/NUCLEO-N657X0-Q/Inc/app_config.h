@@ -20,6 +20,7 @@
 #define APP_CONFIG
 
 #include "arm_math.h"
+#include "stm32_lcd.h"
 
 #define USE_DCACHE
 

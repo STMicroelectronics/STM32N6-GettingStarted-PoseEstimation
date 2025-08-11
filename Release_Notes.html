@@ -1488,8 +1488,8 @@ text-align: center;
 <h1 id="release-notes-for-stm32n6-gettingstarted-poseestimation-application">Release
 Notes for STM32N6-GettingStarted-PoseEstimation Application</h1>
 <h2 id="purpose">Purpose</h2>
-<p>Pose Estimation application to enable the deployment of object
-detections models on STM32N6570-DK and NUCLEO-N657X0-Q boards.</p>
+<p>Pose Estimation application to enable the deployment of pose
+estimation models on STM32N6570-DK and NUCLEO-N657X0-Q boards.</p>
 <p>This application is prebuilt with a pose estimation model.</p>
 <h2 id="key-features">Key Features</h2>
 <ul>
@@ -1519,12 +1519,12 @@ detections models on STM32N6570-DK and NUCLEO-N657X0-Q boards.</p>
 <tbody>
 <tr class="odd">
 <td>STM32Cube.AI runtime</td>
-<td>v10.1.0</td>
+<td>v10.2.0</td>
 <td></td>
 </tr>
 <tr class="even">
 <td>ai-postprocessing-wrapper</td>
-<td>v1.0.2</td>
+<td>v1.0.6</td>
 <td><a href="Middlewares/ai-postprocessing-wrapper/Release_Notes.md">release
 notes</a></td>
 </tr>
@@ -1542,37 +1542,37 @@ notes</a></td>
 </tr>
 <tr class="odd">
 <td>lib_vision_models_pp Library</td>
-<td>v0.8.0</td>
+<td>v0.10.0</td>
 <td><a href="Middlewares/lib_vision_models_pp/lib_vision_models_pp/README.md">release
 notes</a></td>
 </tr>
 <tr class="even">
 <td>CMSIS</td>
 <td>v5.9.0</td>
-<td><a href="STM32Cube_FW_N6/Drivers/CMSIS/Documentation/index.html">release
+<td><a href="STM32Cube_FW_N6/Drivers/CMSIS/st_readme.txt">release
 notes</a></td>
 </tr>
 <tr class="odd">
 <td>STM32N6xx CMSIS Device</td>
-<td>v1.1.0</td>
+<td>v1.2.0</td>
 <td><a href="STM32Cube_FW_N6/Drivers/CMSIS/Device/ST/STM32N6xx/Release_Notes.html">release
 notes</a></td>
 </tr>
 <tr class="even">
 <td>STM32N6xx HAL/LL Drivers</td>
-<td>v1.1.0</td>
+<td>v1.2.0</td>
 <td><a href="STM32Cube_FW_N6/Drivers/STM32N6xx_HAL_Driver/Release_Notes.html">release
 notes</a></td>
 </tr>
 <tr class="odd">
 <td>STM32N6570-DK BSP Drivers</td>
-<td>v1.1.0</td>
+<td>v1.2.0</td>
 <td><a href="STM32Cube_FW_N6/Drivers/BSP/STM32N6570-DK/Release_Notes.html">release
 notes</a></td>
 </tr>
 <tr class="even">
 <td>NUCLEO-N657X0-Q BSP Drivers</td>
-<td>v1.0.0</td>
+<td>v1.1.0</td>
 <td><a href="STM32Cube_FW_N6/Drivers/BSP/STM32N6xx_Nucleo/Release_Notes.html">release
 notes</a></td>
 </tr>
@@ -1625,6 +1625,21 @@ notes</a></td>
 <li>Doc/Program-Hex-Files-STM32CubeProgrammer.md</li>
 </ul>
 <h2 id="update-history">Update history</h2>
+<h3 id="v2.1.0-july-2025">V2.1.0 / July 2025</h3>
+<ul>
+<li>Update to Cube FW to v1.2.0</li>
+<li>Update to STEdgeAI v2.2.0</li>
+<li>Add int8 post processing support for:
+<ul>
+<li>Object detection Yolo v2</li>
+<li>Object detection Yolo v8</li>
+<li>Object detection ST Yolo X</li>
+<li>Single pose estimation Movenet</li>
+<li>Multi pose estimation Yolo v8</li>
+<li>Semantic segmentation Deeplab v3</li>
+</ul></li>
+<li>Add support for BlazeFace post processin</li>
+</ul>
 <h3 id="v2.0.0-april-2025">V2.0.0 / April 2025</h3>
 <ul>
 <li>Add support of the NUCLEO-N657X0-Q board</li>

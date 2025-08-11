@@ -19,15 +19,6 @@
 #include "display_spe.h"
 #include "app_config.h"
 #include "main.h"
-#if POSTPROCESS_TYPE == POSTPROCESS_SPE_MOVENET_UF
-  #if AI_POSE_PP_POSE_KEYPOINTS_NB == 17
-    #include "display_keypoints_17.h"
-  #elif AI_POSE_PP_POSE_KEYPOINTS_NB == 13
-    #include "display_keypoints_13.h"
-  #else
-    #error "Unsupported number of keypoints"
-  #endif
-#endif
 #include "utils.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -95,6 +86,9 @@ static void Display_binding(spe_pp_outBuffer_t *from, spe_pp_outBuffer_t *to, ui
       Display_binding_line(x0, y0 - i, x1 , y1 - i, color);
     }
   }
+
+  Display_keypoint(from, color);
+  Display_keypoint(to, color);
 }
 
 void Display_spe_InitFunctions(int clamp_point_init(int *x, int *y),
@@ -112,8 +106,10 @@ void Display_spe_Detection(spe_pp_outBuffer_t *detect)
 {
   int i;
 
-  for (i = 0; i < ARRAY_NB(bindings); i++)
-    Display_binding(&detect[bindings[i][0]], &detect[bindings[i][1]], bindings[i][2]);
-  for (i = 0; i < AI_POSE_PP_POSE_KEYPOINTS_NB; i++)
-    Display_keypoint(&detect[i], kp_color[i]);
+  if (bindings)
+    for (i = 0; i < ARRAY_NB(bindings); i++)
+      Display_binding(&detect[bindings[i][0]], &detect[bindings[i][1]], bindings[i][2]);
+  else
+    for (i = 0; i < AI_POSE_PP_POSE_KEYPOINTS_NB; i++)
+      Display_keypoint(&detect[i], DEFAULT_KEYPOINTS_COLOR);
 }

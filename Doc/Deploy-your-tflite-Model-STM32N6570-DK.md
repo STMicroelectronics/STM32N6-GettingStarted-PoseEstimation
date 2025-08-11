@@ -60,7 +60,7 @@ You need to edit the last lines of [Inc/app_config.h](../Inc/app_config.h) to ma
 Set the postprocess type to YOLO v2:
 
 ```C
-#define POSTPROCESS_TYPE POSTPROCESS_OD_YOLO_V2_UF
+#define POSTPROCESS_TYPE POSTPROCESS_OD_YOLO_V2_UI
 
 ```
 
@@ -90,7 +90,7 @@ static const char* classes_table[NB_CLASSES] = {
 
 ### Configure post process parameters
 
-A documentation of the post processing library is available at [Postprocess lib](../Lib/lib_vision_models_pp/lib_objdetect_pp/README.md).
+A documentation of the post processing library is available at [Postprocess lib](../Middlewares/lib_vision_models_pp/lib_vision_models_pp/README.md).
 
 You can edit IOU thresholds, anchors values and other parameters.
 
