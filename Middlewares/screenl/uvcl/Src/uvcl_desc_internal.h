@@ -20,6 +20,8 @@
 
 #include <stdint.h>
 
+#include "uvcl.h"
+
 #include "cmsis_compiler.h"
 
 struct uvc_desc_head {
@@ -185,7 +187,7 @@ struct uvc_vs_input_desc_raw {
   uint8_t bTriggerSupport;
   uint8_t bTriggerUsage;
   uint8_t bControlSize;
-  uint8_t bmaControls[1];
+  uint8_t bmaControls[UVCL_MAX_STREAM_CONF_NB];
 } __PACKED;
 
 struct uvc_vs_input_desc {
@@ -226,7 +228,7 @@ struct uvc_yuv422_frame_desc_raw {
   uint32_t dwMaxVideoFrameBufferSize;
   uint32_t dwDefaultFrameInterval;
   uint8_t bFrameIntervalType;
-  uint32_t dwFrameInterval[1];
+  uint32_t dwFrameInterval[UVCL_MAX_STREAM_CONF_NB];
 } __PACKED;
 
 struct uvc_yuv422_frame_desc {
@@ -262,22 +264,6 @@ struct uvc_vs_ep_desc {
   struct uvc_vs_ep_desc_raw raw;
 };
 
-struct uvc_yuv422_conf_desc {
-  struct uvc_conf_desc conf_desc;
-   struct uvc_iad_desc iad_desc;
-    struct uvc_std_vc_desc std_vc_desc;
-     struct uvc_class_vc_desc class_vc_desc;
-      struct uvc_camera_terminal_desc cam_desc;
-      struct uvc_output_term_desc tt_desc;
-    struct uvc_std_vs_desc std_vs_alt0_desc;
-     struct uvc_vs_input_desc vs_input_desc;
-      struct uvc_yuv422_fmt_desc fb_fmt_desc;
-       struct uvc_yuv422_frame_desc fb_frame_desc;
-      struct uvc_color_desc color_desc;
-    struct uvc_std_vs_desc std_vs_alt1_desc;
-     struct uvc_vs_ep_desc ep_desc;
-};
-
 struct uvc_jpeg_fmt_desc_raw {
   uint8_t bLength;
   uint8_t bDescriptorType;
@@ -310,28 +296,12 @@ struct uvc_jpeg_frame_desc_raw {
   uint32_t dwMaxVideoFrameBufferSize;
   uint32_t dwDefaultFrameInterval;
   uint8_t bFrameIntervalType;
-  uint32_t dwFrameInterval[1];
+  uint32_t dwFrameInterval[UVCL_MAX_STREAM_CONF_NB];
 } __PACKED;
 
 struct uvc_jpeg_frame_desc {
   struct uvc_desc_head head;
   struct uvc_jpeg_frame_desc_raw raw;
-};
-
-struct uvc_jpeg_conf_desc {
-  struct uvc_conf_desc conf_desc;
-   struct uvc_iad_desc iad_desc;
-    struct uvc_std_vc_desc std_vc_desc;
-     struct uvc_class_vc_desc class_vc_desc;
-      struct uvc_camera_terminal_desc cam_desc;
-      struct uvc_output_term_desc tt_desc;
-    struct uvc_std_vs_desc std_vs_alt0_desc;
-     struct uvc_vs_input_desc vs_input_desc;
-      struct uvc_jpeg_fmt_desc fb_fmt_desc;
-       struct uvc_jpeg_frame_desc fb_frame_desc;
-      struct uvc_color_desc color_desc;
-    struct uvc_std_vs_desc std_vs_alt1_desc;
-     struct uvc_vs_ep_desc ep_desc;
 };
 
 struct uvc_fb_fmt_desc_raw {
@@ -368,7 +338,7 @@ struct uvc_fb_frame_desc_raw {
   uint32_t dwDefaultFrameInterval;
   uint8_t bFrameIntervalType;
   uint32_t dwBytesPerLine;
-  uint32_t dwFrameInterval[1];
+  uint32_t dwFrameInterval[UVCL_MAX_STREAM_CONF_NB];
 } __PACKED;
 
 struct uvc_fb_frame_desc {
@@ -376,7 +346,7 @@ struct uvc_fb_frame_desc {
   struct uvc_fb_frame_desc_raw raw;
 };
 
-struct uvc_fb_conf_desc {
+struct uvc_head_conf_desc {
   struct uvc_conf_desc conf_desc;
    struct uvc_iad_desc iad_desc;
     struct uvc_std_vc_desc std_vc_desc;
@@ -385,9 +355,35 @@ struct uvc_fb_conf_desc {
       struct uvc_output_term_desc tt_desc;
     struct uvc_std_vs_desc std_vs_alt0_desc;
      struct uvc_vs_input_desc vs_input_desc;
-      struct uvc_fb_fmt_desc fb_fmt_desc;
-       struct uvc_fb_frame_desc fb_frame_desc;
+};
+
+struct uvc_middle_yuv422_conf_desc {
+      struct uvc_yuv422_fmt_desc fmt;
+        struct uvc_yuv422_frame_desc frame[UVCL_MAX_STREAM_CONF_NB];
       struct uvc_color_desc color_desc;
+};
+
+struct uvc_middle_jpeg_conf_desc {
+      struct uvc_jpeg_fmt_desc fmt;
+        struct uvc_jpeg_frame_desc frame[UVCL_MAX_STREAM_CONF_NB];
+      struct uvc_color_desc color_desc;
+};
+
+struct uvc_middle_fb_conf_desc {
+      struct uvc_fb_fmt_desc fmt;
+        struct uvc_fb_frame_desc frame[UVCL_MAX_STREAM_CONF_NB];
+      struct uvc_color_desc color_desc;
+};
+
+struct uvc_middle_conf_desc {
+  union {
+    struct uvc_middle_yuv422_conf_desc yuv422;
+    struct uvc_middle_jpeg_conf_desc jpeg;
+    struct uvc_middle_fb_conf_desc fb;
+  };
+};
+
+struct uvc_tail_conf_desc {
     struct uvc_std_vs_desc std_vs_alt1_desc;
      struct uvc_vs_ep_desc ep_desc;
 };

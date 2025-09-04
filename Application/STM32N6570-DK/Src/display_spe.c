@@ -52,6 +52,7 @@ static void Display_keypoint(spe_pp_outBuffer_t *key, uint32_t color)
   UTIL_LCD_FillCircle(x, y, CIRCLE_RADIUS, color);
 }
 
+#ifdef USE_BINDINGS
 static void Display_binding(spe_pp_outBuffer_t *from, spe_pp_outBuffer_t *to, uint32_t color)
 {
   int is_clamp;
@@ -90,6 +91,7 @@ static void Display_binding(spe_pp_outBuffer_t *from, spe_pp_outBuffer_t *to, ui
   Display_keypoint(from, color);
   Display_keypoint(to, color);
 }
+#endif
 
 void Display_spe_InitFunctions(int clamp_point_init(int *x, int *y),
                                void convert_length_init(float32_t wi, float32_t hi, int *wo, int *ho),
@@ -106,10 +108,11 @@ void Display_spe_Detection(spe_pp_outBuffer_t *detect)
 {
   int i;
 
-  if (bindings)
-    for (i = 0; i < ARRAY_NB(bindings); i++)
-      Display_binding(&detect[bindings[i][0]], &detect[bindings[i][1]], bindings[i][2]);
-  else
-    for (i = 0; i < AI_POSE_PP_POSE_KEYPOINTS_NB; i++)
-      Display_keypoint(&detect[i], DEFAULT_KEYPOINTS_COLOR);
+#ifdef USE_BINDINGS
+  for (i = 0; i < BINDINGS_NB; i++)
+    Display_binding(&detect[bindings[i][0]], &detect[bindings[i][1]], bindings[i][2]);
+#else
+  for (i = 0; i < AI_POSE_PP_POSE_KEYPOINTS_NB; i++)
+    Display_keypoint(&detect[i], DEFAULT_KEYPOINTS_COLOR);
+#endif
 }

@@ -61,10 +61,10 @@ int32_t app_postprocess_run(void *pInput[], int nb_input, void *pOutput, void *p
   od_pp_out_t *pObjDetOutput = (od_pp_out_t *) pOutput;
   pObjDetOutput->pOutBuff = out_detections;
   od_fd_blazeface_pp_in_t pp_input = {
-      .pRawDetections_0 = (float32_t *) pInput[2],
-      .pScores_0        = (float32_t *) pInput[0],
+      .pRawDetections_0 = (float32_t *) pInput[0],
+      .pScores_0        = (float32_t *) pInput[1],
       .pRawDetections_1 = (float32_t *) pInput[3],
-      .pScores_1        = (float32_t *) pInput[1],
+      .pScores_1        = (float32_t *) pInput[2],
   };
   error = od_fd_blazeface_pp_process(&pp_input, pObjDetOutput,
                                      (od_fd_blazeface_pp_static_param_t *) pInput_param);

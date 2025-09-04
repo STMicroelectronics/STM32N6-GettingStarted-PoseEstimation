@@ -51,6 +51,47 @@ Sensor drivers facilitate communication between the Camera Middleware and the ph
 ### Initialization
 
 ```C
+typedef enum {
+  CMW_NOTKNOWN_Sensor = 0x0,
+  CMW_VD66GY_Sensor,
+  CMW_IMX335_Sensor,
+  CMW_OV5640_Sensor,
+  CMW_VD55G1_Sensor,
+  CMW_VD1941_Sensor,
+  CMW_VD5941_Sensor
+} CMW_Sensor_Name_t;
+
+typedef struct
+{
+  int ext_clock_freq_in_hz;
+  int line_len;
+  struct {
+    int datalane_nb;
+    int clock_lane_swap_enable;
+    int data_lane0_swap_enable;
+    int data_lane1_swap_enable;
+    int data_lanes_mapping_swap_enable;
+  } csiconfig;
+} CMW_VD66GY_config_t;
+
+typedef struct
+{
+  int ext_clock_freq_in_hz;
+  struct {
+    int data_rate_in_mps;
+    int clock_lane_swap_enable;
+    int data_lane_swap_enable;
+  } csiconfig;
+} CMW_VD55G1_config_t;
+
+typedef struct {
+  CMW_Sensor_Name_t selected_sensor;
+  union {
+    CMW_VD66GY_config_t vd66gy_config;
+    CMW_VD55G1_config_t vd55g1_config;
+  } config;
+} CMW_Sensor_Config_t;
+
 typedef struct {
   /* Camera settings */
   uint32_t width;
@@ -60,10 +101,26 @@ typedef struct {
   int anti_flicker;
   int mirror_flip;
 } CMW_CameraInit_t;
+
 ```
 
 ```C
-int32_t CMW_CAMERA_Init( CMW_InitConf_t init_conf );
+/**
+ * @brief  Fill the sensor configuration structure with default values.
+ * @param  sensor_config  Pointer to the sensor configuration structure
+ * @retval CMW status
+ */
+int32_t CMW_CAMERA_SetDefaultSensorValues(CMW_Sensor_Config_t *sensor_config);
+```
+
+```C
+/**
+  * @brief  Initializes the camera.
+  * @param  initConf  Mandatory: General camera config
+  * @param  sensor_config  Optional: Sensor specific configuration; NULL if you want to let CMW configure for you
+  * @retval CMW status
+  */
+int32_t CMW_CAMERA_Init(CMW_CameraInit_t *init_conf, CMW_Sensor_Config_t *sensor_config);
 int32_t CMW_CAMERA_DeInit();
 ```
 

@@ -43,14 +43,14 @@ int32_t app_postprocess_init(void *params_postprocess, NN_Instance_TypeDef *NN_I
   params->iou_threshold      = AI_OD_FD_BLAZEFACE_PP_IOU_THRESHOLD;
   params->pAnchors_0         = g_Anchors_0;
   params->pAnchors_1         = g_Anchors_1;
-  params->boxe_0_scale       = *(buffers_info[2].scale);
-  params->boxe_0_zero_point  = *(buffers_info[2].offset);
-  params->proba_0_scale      = *(buffers_info[0].scale);
-  params->proba_0_zero_point = *(buffers_info[0].offset);
+  params->boxe_0_scale       = *(buffers_info[0].scale);
+  params->boxe_0_zero_point  = *(buffers_info[0].offset);
+  params->proba_0_scale      = *(buffers_info[1].scale);
+  params->proba_0_zero_point = *(buffers_info[1].offset);
   params->boxe_1_scale       = *(buffers_info[3].scale);
   params->boxe_1_zero_point  = *(buffers_info[3].offset);
-  params->proba_1_scale      = *(buffers_info[1].scale);
-  params->proba_1_zero_point = *(buffers_info[1].offset);
+  params->proba_1_scale      = *(buffers_info[2].scale);
+  params->proba_1_zero_point = *(buffers_info[2].offset);
   error = od_fd_blazeface_pp_reset(params);
   return error;
 }
@@ -63,10 +63,10 @@ int32_t app_postprocess_run(void *pInput[], int nb_input, void *pOutput, void *p
   od_pp_out_t *pObjDetOutput = (od_pp_out_t *) pOutput;
   pObjDetOutput->pOutBuff = out_detections;
   od_fd_blazeface_pp_in_t pp_input = {
-      .pRawDetections_0 = (int8_t *) pInput[2],
-      .pScores_0        = (int8_t *) pInput[0],
+      .pRawDetections_0 = (int8_t *) pInput[0],
+      .pScores_0        = (int8_t *) pInput[1],
       .pRawDetections_1 = (int8_t *) pInput[3],
-      .pScores_1        = (int8_t *) pInput[1],
+      .pScores_1        = (int8_t *) pInput[2],
   };
   error = od_fd_blazeface_pp_process_int8(&pp_input, pObjDetOutput,
                                           (od_fd_blazeface_pp_static_param_t *) pInput_param);

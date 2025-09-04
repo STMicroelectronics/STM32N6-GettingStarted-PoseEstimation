@@ -66,6 +66,7 @@ static void Display_keypoint(mpe_pp_keyPoints_t *key, uint32_t color)
   UTIL_LCD_FillCircle(x, y, CIRCLE_RADIUS, color);
 }
 
+#ifdef USE_BINDINGS
 static void Display_binding(mpe_pp_keyPoints_t *from, mpe_pp_keyPoints_t *to, uint32_t color)
 {
   int is_clamp;
@@ -104,6 +105,7 @@ static void Display_binding(mpe_pp_keyPoints_t *from, mpe_pp_keyPoints_t *to, ui
   Display_keypoint(from, color);
   Display_keypoint(to, color);
 }
+#endif
 
 void Display_mpe_InitFunctions(int clamp_point_init(int *x, int *y),
                                void convert_length_init(float32_t wi, float32_t hi, int *wo, int *ho),
@@ -135,10 +137,11 @@ void Display_mpe_Detection(mpe_pp_outBuffer_t *detect)
 
   UTIL_LCD_DrawRect(x0, y0, x1 - x0, y1 - y0, colors[detect->class_index % NUMBER_COLORS]);
 
-  if (bindings)
-    for (i = 0; i < ARRAY_NB(bindings); i++)
-      Display_binding(&detect->pKeyPoints[bindings[i][0]], &detect->pKeyPoints[bindings[i][1]], bindings[i][2]);
-  else
-    for (i = 0; i < AI_POSE_PP_POSE_KEYPOINTS_NB; i++)
-      Display_keypoint(&detect->pKeyPoints[i], DEFAULT_KEYPOINTS_COLOR);
+#ifdef USE_BINDINGS
+  for (i = 0; i < BINDINGS_NB; i++)
+    Display_binding(&detect->pKeyPoints[bindings[i][0]], &detect->pKeyPoints[bindings[i][1]], bindings[i][2]);
+#else
+  for (i = 0; i < AI_POSE_PP_POSE_KEYPOINTS_NB; i++)
+    Display_keypoint(&detect->pKeyPoints[i], DEFAULT_KEYPOINTS_COLOR);
+#endif
 }

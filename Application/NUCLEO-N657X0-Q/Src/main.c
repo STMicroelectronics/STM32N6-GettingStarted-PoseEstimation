@@ -94,6 +94,8 @@ Rectangle_TypeDef lcd_fg_area = {
   #error "PostProcessing type not supported"
 #endif
 
+BINDINGS;
+
 volatile int32_t cameraFrameReceived;
 uint8_t *nn_in;
 

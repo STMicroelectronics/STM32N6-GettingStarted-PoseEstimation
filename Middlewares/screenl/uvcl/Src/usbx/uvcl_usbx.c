@@ -119,6 +119,12 @@ static void UVCL_StopStreaming(struct UX_DEVICE_CLASS_VIDEO_STREAM_STRUCT *strea
   if (p_ctx->on_fly_ctx)
     UVCL_AbortOnFlyCtx(p_ctx);
 
+  /* Also release queue frame */
+  if (p_ctx->p_frame) {
+     p_ctx->cbs->frame_release(p_ctx->cbs, p_ctx->p_frame);
+     p_ctx->p_frame = NULL;
+  }
+
   if (p_ctx->cbs->streaming_inactive)
     p_ctx->cbs->streaming_inactive(p_ctx->cbs);
 }
@@ -126,11 +132,14 @@ static void UVCL_StopStreaming(struct UX_DEVICE_CLASS_VIDEO_STREAM_STRUCT *strea
 static void UVCL_StartStreaming(struct UX_DEVICE_CLASS_VIDEO_STREAM_STRUCT *stream)
 {
   UVCL_Ctx_t *p_ctx = UVCL_usbx_get_ctx_from_stream(stream);
+  UVCL_StreamConf_t stream_param;
   int i;
 
+  UVCL_SetupStreamingStream(p_ctx, &stream_param);
   if (p_ctx->cbs->streaming_active)
-    p_ctx->cbs->streaming_active(p_ctx->cbs);
+    p_ctx->cbs->streaming_active(p_ctx->cbs, stream_param);
 
+  p_ctx->frame_period_in_ms = 1000 / stream_param.fps;
   p_ctx->packet[0] = 2;
   p_ctx->packet[1] = 0;
   p_ctx->frame_start = HAL_GetTick() - p_ctx->frame_period_in_ms;
@@ -323,6 +332,7 @@ int UVCL_usbx_init(UVCL_Ctx_t *p_ctx, PCD_HandleTypeDef *pcd_handle, PCD_TypeDef
 {
   UX_DEVICE_CLASS_VIDEO_STREAM_PARAMETER vsp[1] = { 0 };
   UX_DEVICE_CLASS_VIDEO_PARAMETER vp = { 0 };
+  UVCL_DescBuffer buffer_desc = { 0 };
   UVCL_DescConf desc_conf = { 0 };
   uint8_t lang_string_desc[4];
   int uvc_dev_strings_len;
@@ -331,6 +341,7 @@ int UVCL_usbx_init(UVCL_Ctx_t *p_ctx, PCD_HandleTypeDef *pcd_handle, PCD_TypeDef
   int uvc_desc_fs_len;
   int len;
   int ret;
+  int i;
 
   assert(UVC_ISO_HS_MPS >= UVC_ISO_FS_MPS);
 
@@ -343,15 +354,15 @@ int UVCL_usbx_init(UVCL_Ctx_t *p_ctx, PCD_HandleTypeDef *pcd_handle, PCD_TypeDef
     return ret;
 
   desc_conf.is_hs = 1;
-  desc_conf.width = conf->width;
-  desc_conf.height = conf->height;
-  desc_conf.fps = conf->fps;
-  desc_conf.payload_type = conf->payload_type;
-  desc_conf.dwMaxVideoFrameSize = UVCL_ComputedwMaxVideoFrameSize(conf);
+  for (i = 0; i < UVCL_MAX_STREAM_CONF_NB; i++)
+    desc_conf.streams[i] = conf->streams[i];
+  desc_conf.streams_nb = conf->streams_nb;
   uvc_desc_hs_len = UVCL_get_device_desc(uvc_desc_hs, sizeof(uvc_desc_hs), 1, 2, 3);
   assert(uvc_desc_hs_len > 0);
+  buffer_desc.buffer = p_ctx->desc_buffer_pool;
+  buffer_desc.buffer_size = sizeof(p_ctx->desc_buffer_pool);
   len = UVCL_get_configuration_desc(&uvc_desc_hs[uvc_desc_hs_len], sizeof(uvc_desc_hs) - uvc_desc_hs_len,
-                                    &desc_conf);
+                                    &desc_conf, &buffer_desc);
   assert(len > 0);
   uvc_desc_hs_len += len;
 
@@ -359,7 +370,7 @@ int UVCL_usbx_init(UVCL_Ctx_t *p_ctx, PCD_HandleTypeDef *pcd_handle, PCD_TypeDef
   uvc_desc_fs_len = UVCL_get_device_desc(uvc_desc_fs, sizeof(uvc_desc_fs), 1, 2, 3);
   assert(uvc_desc_fs_len > 0);
   len = UVCL_get_configuration_desc(&uvc_desc_fs[uvc_desc_fs_len], sizeof(uvc_desc_fs) - uvc_desc_fs_len,
-                                    &desc_conf);
+                                    &desc_conf, &buffer_desc);
   assert(len > 0);
   uvc_desc_fs_len += len;
 

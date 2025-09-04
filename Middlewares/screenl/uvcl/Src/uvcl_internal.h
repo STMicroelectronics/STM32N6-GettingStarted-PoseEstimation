@@ -23,6 +23,14 @@
 #include "cmsis_compiler.h"
 #include "uvcl.h"
 
+#ifndef MAX
+#define MAX(a,b) ((a)>(b)?(a):(b))
+#endif
+
+#ifndef MIN
+#define MIN(a,b) ((a)<(b)?(a):(b))
+#endif
+
 #ifndef USBL_PACKET_PER_MICRO_FRAME
 #define USBL_PACKET_PER_MICRO_FRAME 1
 #endif
@@ -136,6 +144,12 @@ typedef struct {
 } UVCL_OnFlyCtx_t;
 
 typedef struct {
+  uint8_t bFormatIndex;
+  uint8_t bFrameIndex;
+  uint32_t dwFrameInterval;
+} UVCL_StreamConfPrivate;
+
+typedef struct {
   UVCL_Conf_t conf;
   UVCL_Callbacks_t *cbs;
   int buffer_nb;
@@ -150,12 +164,15 @@ typedef struct {
   UVCL_OnFlyCtx_t *on_fly_ctx;
   UVC_VideoControlTypeDef UVC_VideoCommitControl;
   UVC_VideoControlTypeDef UVC_VideoProbeControl;
+  UVCL_StreamConfPrivate streams_p[UVCL_MAX_STREAM_CONF_NB];
+  uint32_t desc_buffer_pool[UVCL_MAX_STREAM_CONF_NB * 256];
 } UVCL_Ctx_t;
 
 UVCL_OnFlyCtx_t *UVCL_StartNewFrameTransmission(UVCL_Ctx_t *p_ctx, int packet_size);
 void UVCL_UpdateOnFlyCtx(UVCL_Ctx_t *p_ctx, int len);
 void UVCL_AbortOnFlyCtx(UVCL_Ctx_t *p_ctx);
 int UVCL_handle_setup_request(UVCL_Ctx_t *p_ctx, UVCL_SetupReq_t *req);
-uint32_t UVCL_ComputedwMaxVideoFrameSize(UVCL_Conf_t *conf);
+uint32_t UVCL_ComputedwMaxVideoFrameSize(UVCL_Ctx_t *ctx, int format_idx, int frame_idx);
+void UVCL_SetupStreamingStream(UVCL_Ctx_t *ctx, UVCL_StreamConf_t *stream);
 
 #endif

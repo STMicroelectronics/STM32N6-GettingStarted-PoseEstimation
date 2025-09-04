@@ -117,7 +117,7 @@ static const float32_t AI_OD_YOLOV2_PP_ANCHORS[2*AI_OD_YOLOV2_PP_NB_ANCHORS] = {
 #define AI_OD_YOLOV2_PP_MAX_BOXES_LIMIT   (10)
 ```
 
-The list of all the defines needed by each postprocessing type is available in the [Postprocess defines documentation](Postprocess-Defines.md).
+The list of all the defines needed by each postprocessing type is available in the [Postprocess defines documentation](../Middlewares/ai-postprocessing-wrapper/README.md).
 
 ## 4. Build Application
 

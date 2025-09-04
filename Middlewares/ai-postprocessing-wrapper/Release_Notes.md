@@ -7,7 +7,11 @@ It allows to simplify the usage of it in the use case of app using multiple type
 
 ## Update history
 
-### V1.0.6 / July 2025
+### v1.0.7 / August 2025
+
+BlazeFace post processing bug fix
+
+### v1.0.6 / July 2025
 
 Add int8 post processing support for:
 - Object detection Yolo v2
@@ -19,7 +23,6 @@ Add int8 post processing support for:
 
 Add support for BlazeFace post processing
 
-### V1.0.2 / April 2025
+### v1.0.2 / April 2025
 
 Initial Release
-

@@ -220,6 +220,12 @@ static int UVCL_usbd_stop_streaming(void *ctx)
     UVCL_AbortOnFlyCtx(p_ctx);
   USBD_LL_FlushEP(p_dev, 0x81);
 
+  /* Also release queue frame */
+  if (p_ctx->p_frame) {
+     p_ctx->cbs->frame_release(p_ctx->cbs, p_ctx->p_frame);
+     p_ctx->p_frame = NULL;
+  }
+
   if (p_ctx->cbs->streaming_inactive)
     p_ctx->cbs->streaming_inactive(p_ctx->cbs);
 
@@ -229,14 +235,17 @@ static int UVCL_usbd_stop_streaming(void *ctx)
 static int UVCL_usbd_start_streaming(void *ctx)
 {
   USBD_HandleTypeDef *p_dev = ctx;
+  UVCL_StreamConf_t stream_param;
   UVCL_Ctx_t *p_ctx;
 
   p_ctx = UVCL_usbd_get_ctx_from_p_dev(p_dev);
+  UVCL_SetupStreamingStream(p_ctx, &stream_param);
   if (p_ctx->cbs->streaming_active)
-    p_ctx->cbs->streaming_active(p_ctx->cbs);
+    p_ctx->cbs->streaming_active(p_ctx->cbs, stream_param);
 
   USBD_LL_FlushEP(p_dev, 0x81);
 
+  p_ctx->frame_period_in_ms = 1000 / stream_param.fps;
   p_ctx->packet[0] = 2;
   p_ctx->packet[1] = 0;
   p_ctx->frame_start = HAL_GetTick() - p_ctx->frame_period_in_ms;
@@ -351,22 +360,25 @@ static USBD_ClassTypeDef usbd_class = {
   UVCL_stm32_usbd_get_device_qualifier_desc,
 };
 
-static void UVCL_stm32_usbd_build_descriptors(UVCL_Conf_t *conf)
+static void UVCL_stm32_usbd_build_descriptors(UVCL_Ctx_t *p_ctx, UVCL_Conf_t *conf)
 {
+  UVCL_DescBuffer buffer_desc = { 0 };
   UVCL_DescConf desc_conf = { 0 };
   int len;
+  int i;
 
   desc_conf.is_hs = 1;
-  desc_conf.width = conf->width;
-  desc_conf.height = conf->height;
-  desc_conf.fps = conf->fps;
-  desc_conf.payload_type = conf->payload_type;
-  desc_conf.dwMaxVideoFrameSize = UVCL_ComputedwMaxVideoFrameSize(conf);
-  uvc_desc_hs_len = UVCL_get_configuration_desc(uvc_desc_hs, sizeof(uvc_desc_hs), &desc_conf);
+  for (i = 0; i < UVCL_MAX_STREAM_CONF_NB; i++)
+    desc_conf.streams[i] = conf->streams[i];
+  desc_conf.streams_nb = conf->streams_nb;
+
+  buffer_desc.buffer = p_ctx->desc_buffer_pool;
+  buffer_desc.buffer_size = sizeof(p_ctx->desc_buffer_pool);
+  uvc_desc_hs_len = UVCL_get_configuration_desc(uvc_desc_hs, sizeof(uvc_desc_hs), &desc_conf, &buffer_desc);
   assert(uvc_desc_hs_len > 0);
 
   desc_conf.is_hs = 0;
-  uvc_desc_fs_len = UVCL_get_configuration_desc(uvc_desc_fs, sizeof(uvc_desc_fs), &desc_conf);
+  uvc_desc_fs_len = UVCL_get_configuration_desc(uvc_desc_fs, sizeof(uvc_desc_fs), &desc_conf, &buffer_desc);
   assert(uvc_desc_fs_len > 0);
 
   len = UVCL_get_device_qualifier_desc(dev_qualifier_desc, sizeof(dev_qualifier_desc));
@@ -435,7 +447,7 @@ int UVCL_stm32_usbd_init(UVCL_Ctx_t *p_ctx, PCD_HandleTypeDef *pcd_handle, PCD_T
 {
   int ret;
 
-  UVCL_stm32_usbd_build_descriptors(conf);
+  UVCL_stm32_usbd_build_descriptors(p_ctx, conf);
 
   usbd_ctx.p_ctx = p_ctx;
   ret = USBD_Init(&usbd_ctx.usbd_dev, &usbd_desc, 0);

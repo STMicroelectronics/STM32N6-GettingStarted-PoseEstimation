@@ -17,22 +17,79 @@
 
 #include "uvcl_desc.h"
 
-#include <assert.h>
-#include <stdint.h>
 #include <string.h>
 
-#include "stm32n6xx_hal.h"
-
-#include "uvcl.h"
-#include "uvcl_internal.h"
 #include "uvcl_codes.h"
+
 #include "uvcl_desc_internal.h"
+#include "uvcl_internal.h"
+#include <assert.h>
 
 #define container_of(ptr, type, member) (type *) ((unsigned char *)ptr - offsetof(type,member))
 #define ARRAY_LEN(a) (sizeof(a)/sizeof(a[0]))
 
 #define DEV_MANUFACTURER_STRING      "STMicroelectronics"
 #define DEV_PRODUCT_STRING           "STM32 uvc"
+
+struct buffer_allocator {
+  void *buffer;
+  int buffer_size;
+  void *current;
+  void *limit;
+};
+
+static int ba_init(struct buffer_allocator *ba)
+{
+  if (!ba->buffer)
+    return -1;
+  if ((uintptr_t)ba->buffer & 0x3)
+    return -1;
+  if (ba->buffer <= 0)
+    return  -1;
+
+  ba->current = ba->buffer;
+  ba->limit = (uint8_t *)ba->buffer + ba->buffer_size;
+
+  return 0;
+}
+
+static void *ba_alloc(struct buffer_allocator *ba, size_t size)
+{
+  void *res = ba->current;
+
+  if (size <= 0)
+    return NULL;
+
+  if ((uint8_t *)ba->current + size >= (uint8_t *)ba->limit)
+    return NULL;
+
+  size = (size + 3) & ~0x3;
+  ba->current = (uint8_t *)ba->buffer + size;
+
+  return res;
+}
+
+static int compute_min_fps(int *fps, int fps_nb)
+{
+  int min_fps = fps[0];
+  int i;
+
+  for (i = 1; i <fps_nb; i++)
+    min_fps = MIN(min_fps, fps[i]);
+
+  return min_fps;
+}
+
+static int compute_max_fps(int *fps, int fps_nb)
+{
+  int max_fps = fps[0];
+  int i;
+
+  for (i = 1; i <fps_nb; i++)
+    max_fps = MAX(max_fps, fps[i]);
+
+  return max_fps;
+}
 
 static void gen_serial_int_to_ascii(uint32_t value, char *p_buf, uint8_t len)
 {
@@ -145,9 +202,9 @@ static void build_dev_desc(struct uvc_dev_desc *desc, struct uvc_desc_head *next
   desc->raw.bLength = sizeof(desc->raw);
   desc->raw.bDescriptorType = 0x01;
   desc->raw.bcdUSB = 0x0200;
-  desc->raw.bDeviceClass = 0x00;
-  desc->raw.bDeviceSubClass = 0x00;
-  desc->raw.bDeviceProtocol = 0x00;
+  desc->raw.bDeviceClass = 0xEF;
+  desc->raw.bDeviceSubClass = 0x02;
+  desc->raw.bDeviceProtocol = 0x01;
   desc->raw.bMaxPacketSize = 64;
   desc->raw.idVendor = 0x0483;
   desc->raw.idProduct = 0x5780;
@@ -215,7 +272,7 @@ static void build_uvc_std_vc_desc(struct uvc_std_vc_desc *desc, struct uvc_desc_
   desc->raw.bNumEndpoints = 0;
   desc->raw.bInterfaceClass = CC_VIDEO;
   desc->raw.bInterfaceSubClass = SC_VIDEOCONTROL;
-  desc->raw.bInterfaceProtocol = PC_PROTOCOL_15;
+  desc->raw.bInterfaceProtocol = PC_PROTOCOL_UNDEFINED;
   desc->raw.iInterface = 0;
 
   append_as_child(parent, &desc->head);
@@ -324,14 +381,16 @@ static void update_uvc_vs_input_desc(struct uvc_desc_head *head)
 static void build_uvc_vs_input_desc(struct uvc_vs_input_desc *desc, struct uvc_desc_head *next,
                                     struct uvc_desc_head *parent, UVCL_DescConf *p_conf, int format_nb)
 {
-  assert(format_nb <= ARRAY_LEN(desc->raw.bmaControls));
+  int i;
 
-  desc->head.bLength = sizeof(desc->raw);
+  assert(format_nb > 0 && format_nb <= ARRAY_LEN(desc->raw.bmaControls));
+
+  desc->head.bLength = 13 + format_nb;
   desc->head.raw = (uint8_t *) &desc->raw;
   desc->head.gen = gen_default_desc;
   desc->head.update = update_uvc_vs_input_desc;
   desc->head.next = next;
-  desc->raw.bLength = sizeof(desc->raw);
+  desc->raw.bLength = 13 + format_nb;
   desc->raw.bDescriptorType = CS_INTERFACE;
   desc->raw.bDescriptorSubType = VS_INPUT_HEADER;
   desc->raw.bNumFormats = format_nb;
@@ -343,13 +402,15 @@ static void build_uvc_vs_input_desc(struct uvc_vs_input_desc *desc, struct uvc_d
   desc->raw.bTriggerSupport = 0;
   desc->raw.bTriggerUsage = 0;
   desc->raw.bControlSize = 1;
-  desc->raw.bmaControls[0] = 0;
+  for (i = 0; i < format_nb; i++)
+    desc->raw.bmaControls[i] = 0;
 
   append_as_child(parent, &desc->head);
 }
 
 static void build_uvc_yuv422_fmt_desc(struct uvc_yuv422_fmt_desc *desc, struct uvc_desc_head *next,
-                                       struct uvc_desc_head *parent, UVCL_DescConf *p_conf)
+                                      struct uvc_desc_head *parent, UVCL_DescConf *p_conf, uint8_t frame_desc_nb,
+                                      int idx)
 {
   const uint8_t YUV422_guid[] = {'Y', 'U', 'Y', '2', 0x00, 0x00, 0x10, 0x00,
                  0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71};
@@ -362,8 +423,8 @@ static void build_uvc_yuv422_fmt_desc(struct uvc_yuv422_fmt_desc *desc, struct u
   desc->raw.bLength = sizeof(desc->raw);
   desc->raw.bDescriptorType = CS_INTERFACE;
   desc->raw.bDescriptorSubType = VS_FORMAT_UNCOMPRESSED;
-  desc->raw.bFormatIndex = 1;
-  desc->raw.bNumFrameDescriptors = 1;
+  desc->raw.bFormatIndex = idx + 1;
+  desc->raw.bNumFrameDescriptors = frame_desc_nb;
   for (i = 0; i < 16; i++)
     desc->raw.guidFormat[i] = YUV422_guid[i];
   desc->raw.bBitsPerPixel = 16;
@@ -377,110 +438,42 @@ static void build_uvc_yuv422_fmt_desc(struct uvc_yuv422_fmt_desc *desc, struct u
 }
 
 static void build_uvc_yuv422_frame_desc(struct uvc_yuv422_frame_desc *desc, struct uvc_desc_head *next,
-                                         struct uvc_desc_head *parent, UVCL_DescConf *p_conf)
+                                         struct uvc_desc_head *parent, UVCL_DescConf *p_conf, int idx,
+                                         uint16_t wWidth, uint16_t wHeight, int fps[UVCL_MAX_STREAM_CONF_NB],
+                                         int fps_nb)
 {
-  desc->head.bLength = sizeof(desc->raw);
+  int min_fps = compute_min_fps(fps, fps_nb);
+  int max_fps = compute_max_fps(fps, fps_nb);
+  int i;
+
+  assert(fps_nb > 0 && fps_nb <= UVCL_MAX_STREAM_CONF_NB);
+  assert(wWidth);
+  assert(wHeight);
+
+  desc->head.bLength = 26 + 4 * fps_nb;
   desc->head.raw = (uint8_t *) &desc->raw;
   desc->head.gen = gen_default_desc;
   desc->head.next = next;
-  desc->raw.bLength = sizeof(desc->raw);
+  desc->raw.bLength = 26 + 4 * fps_nb;
   desc->raw.bDescriptorType = CS_INTERFACE;
   desc->raw.bDescriptorSubType = VS_FRAME_UNCOMPRESSED;
-  desc->raw.bFrameIndex = 1;
+  desc->raw.bFrameIndex = idx + 1;
   desc->raw.bmCapabilities = 2;
-  desc->raw.wWidth = p_conf->width;
-  desc->raw.wHeight = p_conf->height;
-  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * p_conf->fps * 16;
-  desc->raw.dwMaxBitRate = desc->raw.dwMinBitRate;
-  desc->raw.dwDefaultFrameInterval = 10000000 / p_conf->fps;
-  desc->raw.bFrameIntervalType = 1;
-  desc->raw.dwFrameInterval[0] = 10000000 / p_conf->fps;
+  desc->raw.wWidth = wWidth;
+  desc->raw.wHeight = wHeight;
+  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * min_fps * 16;
+  desc->raw.dwMaxBitRate = desc->raw.wWidth * desc->raw.wHeight * max_fps * 16;
+  desc->raw.dwMaxVideoFrameBufferSize = desc->raw.wWidth * desc->raw.wHeight * 2;
+  desc->raw.dwDefaultFrameInterval = 10000000 / fps[0];
+  desc->raw.bFrameIntervalType = fps_nb;
+  for (i = 0; i < fps_nb; i++)
+    desc->raw.dwFrameInterval[i] = 10000000 / fps[i];
 
   append_as_child(parent, &desc->head);
-}
-
-static void build_uvc_color_desc(struct uvc_color_desc *desc, struct uvc_desc_head *next, struct uvc_desc_head *parent,
-                                 UVCL_DescConf *p_conf)
-{
-  desc->head.bLength = sizeof(desc->raw);
-  desc->head.raw = (uint8_t *) &desc->raw;
-  desc->head.gen = gen_default_desc;
-  desc->head.next = next;
-  desc->raw.bLength = sizeof(desc->raw);
-  desc->raw.bDescriptorType = CS_INTERFACE;
-  desc->raw.bDescriptorSubType = VS_COLORFORMAT;
-  desc->raw.bColorPrimaries = 1;
-  desc->raw.bTransferCharacteristics = 1;
-  desc->raw.bMatrixCoefficients = 4;
-
-  append_as_child(parent, &desc->head);
-}
-
-static void build_uvc_vs_ep_desc(struct uvc_vs_ep_desc *desc, struct uvc_desc_head *next, struct uvc_desc_head *parent,
-                                 UVCL_DescConf *p_conf, int wMaxPacketSize)
-{
-  desc->head.bLength = sizeof(desc->raw);
-  desc->head.raw = (uint8_t *) &desc->raw;
-  desc->head.gen = gen_default_desc;
-  desc->head.next = next;
-  desc->raw.bLength = sizeof(desc->raw);
-  desc->raw.bDescriptorType = 5;
-  desc->raw.bEndpointAddress = 0x81;
-  desc->raw.bmAttributes = 0x05;
-  desc->raw.wMaxPacketSize = wMaxPacketSize;
-  desc->raw.bInterval = 1;
-
-  append_as_child(parent, &desc->head);
-}
-
-static void build_xx_yuv422_conf_desc(struct uvc_yuv422_conf_desc *desc, UVCL_DescConf *p_conf, int wMaxPacketSize)
-{
-  build_uvc_conf_desc(&desc->conf_desc, &desc->iad_desc.head, p_conf);
-    build_uvc_iad_desc(&desc->iad_desc, &desc->std_vc_desc.head, &desc->conf_desc.head, p_conf);
-      build_uvc_std_vc_desc(&desc->std_vc_desc, &desc->class_vc_desc.head, &desc->iad_desc.head, p_conf);
-        build_uvc_class_vc_desc(&desc->class_vc_desc, &desc->cam_desc.head, &desc->std_vc_desc.head, p_conf);
-          build_uvc_camera_terminal_desc(&desc->cam_desc, &desc->tt_desc.head, &desc->class_vc_desc.head, p_conf);
-          build_uvc_output_term_desc(&desc->tt_desc, &desc->std_vs_alt0_desc.head, &desc->class_vc_desc.head, p_conf);
-      build_uvc_std_vs_desc(&desc->std_vs_alt0_desc, &desc->vs_input_desc.head, &desc->iad_desc.head, p_conf, 0, 0);
-        build_uvc_vs_input_desc(&desc->vs_input_desc, &desc->fb_fmt_desc.head, &desc->std_vs_alt0_desc.head, p_conf, 1);
-          build_uvc_yuv422_fmt_desc(&desc->fb_fmt_desc, &desc->fb_frame_desc.head, &desc->vs_input_desc.head, p_conf);
-            build_uvc_yuv422_frame_desc(&desc->fb_frame_desc, &desc->color_desc.head, &desc->fb_fmt_desc.head, p_conf);
-          build_uvc_color_desc(&desc->color_desc, &desc->std_vs_alt1_desc.head, &desc->fb_fmt_desc.head, p_conf);
-      build_uvc_std_vs_desc(&desc->std_vs_alt1_desc, &desc->ep_desc.head, &desc->iad_desc.head, p_conf, 1, 1);
-        build_uvc_vs_ep_desc(&desc->ep_desc, NULL, &desc->std_vs_alt1_desc.head, p_conf, wMaxPacketSize);
-}
-
-static int UVCL_build_hs_yuv422_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
-{
-  struct uvc_yuv422_conf_desc desc = { 0 };
-  int wMaxPacketSize = 1024 | ((USBL_PACKET_PER_MICRO_FRAME - 1) << 11);
-
-  assert(USBL_PACKET_PER_MICRO_FRAME >= 1 && USBL_PACKET_PER_MICRO_FRAME <= 3);
-
-  build_xx_yuv422_conf_desc(&desc, p_conf, wMaxPacketSize);
-  update(&desc.conf_desc.head);
-  return generate(&desc.conf_desc.head, p_dst, dst_len);
-}
-
-static int UVCL_build_fs_yuv422_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
-{
-  struct uvc_yuv422_conf_desc desc = { 0 };
-
-  build_xx_yuv422_conf_desc(&desc, p_conf, 1023);
-  update(&desc.conf_desc.head);
-  return generate(&desc.conf_desc.head, p_dst, dst_len);
-}
-
-static int UVCL_build_yuv422_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
-{
-  if (p_conf->is_hs)
-    return UVCL_build_hs_yuv422_configuration_desc(p_dst, dst_len, p_conf);
-  else
-    return UVCL_build_fs_yuv422_configuration_desc(p_dst, dst_len, p_conf);
 }
 
 static void build_uvc_jpeg_fmt_desc(struct uvc_jpeg_fmt_desc *desc, struct uvc_desc_head *next,
-                                    struct uvc_desc_head *parent, UVCL_DescConf *p_conf)
+                                    struct uvc_desc_head *parent, UVCL_DescConf *p_conf, uint8_t frame_desc_nb, int idx)
 {
   desc->head.bLength = sizeof(desc->raw);
   desc->head.raw = (uint8_t *) &desc->raw;
@@ -489,8 +482,8 @@ static void build_uvc_jpeg_fmt_desc(struct uvc_jpeg_fmt_desc *desc, struct uvc_d
   desc->raw.bLength = sizeof(desc->raw);
   desc->raw.bDescriptorType = CS_INTERFACE;
   desc->raw.bDescriptorSubType = VS_FORMAT_MJPEG;
-  desc->raw.bFormatIndex = 1;
-  desc->raw.bNumFrameDescriptors = 1;
+  desc->raw.bFormatIndex = idx + 1;
+  desc->raw.bNumFrameDescriptors = frame_desc_nb;
   desc->raw.bmFlags = 1;
   desc->raw.bDefaultFrameIndex = 1;
   desc->raw.bAspectRatioX = 0;
@@ -502,74 +495,38 @@ static void build_uvc_jpeg_fmt_desc(struct uvc_jpeg_fmt_desc *desc, struct uvc_d
 }
 
 static void build_uvc_jpeg_frame_desc(struct uvc_jpeg_frame_desc *desc, struct uvc_desc_head *next,
-                                      struct uvc_desc_head *parent, UVCL_DescConf *p_conf)
+                                      struct uvc_desc_head *parent, UVCL_DescConf *p_conf, int idx, uint16_t wWidth,
+                                      uint16_t wHeight, int fps[UVCL_MAX_STREAM_CONF_NB], int fps_nb,
+                                      uint32_t dwMaxVideoFrameSize)
 {
-  desc->head.bLength = sizeof(desc->raw);
+  int min_fps = compute_min_fps(fps, fps_nb);
+  int max_fps = compute_max_fps(fps, fps_nb);
+  int i;
+
+  assert(fps_nb > 0 && fps_nb <= UVCL_MAX_STREAM_CONF_NB);
+  assert(wWidth);
+  assert(wHeight);
+
+  desc->head.bLength = 26 + 4 * fps_nb;
   desc->head.raw = (uint8_t *) &desc->raw;
   desc->head.gen = gen_default_desc;
   desc->head.next = next;
-  desc->raw.bLength = sizeof(desc->raw);;
-
+  desc->raw.bLength = 26 + 4 * fps_nb;
   desc->raw.bDescriptorType = CS_INTERFACE;
   desc->raw.bDescriptorSubType = VS_FRAME_MJPEG;
-  desc->raw.bFrameIndex = 1;
+  desc->raw.bFrameIndex = idx + 1;
   desc->raw.bmCapabilities = 2;
-  desc->raw.wWidth = p_conf->width;
-  desc->raw.wHeight = p_conf->height;
-  desc->raw.dwMinBitRate = p_conf->dwMaxVideoFrameSize * p_conf->fps * 8;
-  desc->raw.dwMaxBitRate = desc->raw.dwMinBitRate;
-  desc->raw.dwMaxVideoFrameBufferSize = p_conf->dwMaxVideoFrameSize;
-  desc->raw.dwDefaultFrameInterval = 10000000 / p_conf->fps;
-  desc->raw.bFrameIntervalType = 1;
-  desc->raw.dwFrameInterval[0] = 10000000 / p_conf->fps;
+  desc->raw.wWidth = wWidth;
+  desc->raw.wHeight = wHeight;
+  desc->raw.dwMinBitRate = dwMaxVideoFrameSize * min_fps * 8;
+  desc->raw.dwMaxBitRate = dwMaxVideoFrameSize * max_fps * 8;
+  desc->raw.dwMaxVideoFrameBufferSize = dwMaxVideoFrameSize;
+  desc->raw.dwDefaultFrameInterval = 10000000 / fps[0];
+  desc->raw.bFrameIntervalType = fps_nb;
+  for (i = 0; i < fps_nb; i++)
+    desc->raw.dwFrameInterval[i] = 10000000 / fps[i];
 
   append_as_child(parent, &desc->head);
-}
-
-static void build_xx_jpeg_conf_desc(struct uvc_jpeg_conf_desc *desc, UVCL_DescConf *p_conf, int wMaxPacketSize)
-{
-  build_uvc_conf_desc(&desc->conf_desc, &desc->iad_desc.head, p_conf);
-    build_uvc_iad_desc(&desc->iad_desc, &desc->std_vc_desc.head, &desc->conf_desc.head, p_conf);
-      build_uvc_std_vc_desc(&desc->std_vc_desc, &desc->class_vc_desc.head, &desc->iad_desc.head, p_conf);
-        build_uvc_class_vc_desc(&desc->class_vc_desc, &desc->cam_desc.head, &desc->std_vc_desc.head, p_conf);
-          build_uvc_camera_terminal_desc(&desc->cam_desc, &desc->tt_desc.head, &desc->class_vc_desc.head, p_conf);
-          build_uvc_output_term_desc(&desc->tt_desc, &desc->std_vs_alt0_desc.head, &desc->class_vc_desc.head, p_conf);
-      build_uvc_std_vs_desc(&desc->std_vs_alt0_desc, &desc->vs_input_desc.head, &desc->iad_desc.head, p_conf, 0, 0);
-        build_uvc_vs_input_desc(&desc->vs_input_desc, &desc->fb_fmt_desc.head, &desc->std_vs_alt0_desc.head, p_conf, 1);
-          build_uvc_jpeg_fmt_desc(&desc->fb_fmt_desc, &desc->fb_frame_desc.head, &desc->vs_input_desc.head, p_conf);
-            build_uvc_jpeg_frame_desc(&desc->fb_frame_desc, &desc->color_desc.head, &desc->fb_fmt_desc.head, p_conf);
-          build_uvc_color_desc(&desc->color_desc, &desc->std_vs_alt1_desc.head, &desc->fb_fmt_desc.head, p_conf);
-      build_uvc_std_vs_desc(&desc->std_vs_alt1_desc, &desc->ep_desc.head, &desc->iad_desc.head, p_conf, 1, 1);
-        build_uvc_vs_ep_desc(&desc->ep_desc, NULL, &desc->std_vs_alt1_desc.head, p_conf, wMaxPacketSize);
-}
-
-static int UVCL_build_hs_jpeg_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
-{
-  struct uvc_jpeg_conf_desc desc = { 0 };
-  int wMaxPacketSize = 1024 | ((USBL_PACKET_PER_MICRO_FRAME - 1) << 11);
-
-  assert(USBL_PACKET_PER_MICRO_FRAME >= 1 && USBL_PACKET_PER_MICRO_FRAME <= 3);
-
-  build_xx_jpeg_conf_desc(&desc, p_conf, wMaxPacketSize);
-  update(&desc.conf_desc.head);
-  return generate(&desc.conf_desc.head, p_dst, dst_len);
-}
-
-static int UVCL_build_fs_jpeg_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
-{
-  struct uvc_jpeg_conf_desc desc = { 0 };
-
-  build_xx_jpeg_conf_desc(&desc, p_conf, 1023);
-  update(&desc.conf_desc.head);
-  return generate(&desc.conf_desc.head, p_dst, dst_len);
-}
-
-static int UVCL_build_jpeg_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
-{
-  if (p_conf->is_hs)
-    return UVCL_build_hs_jpeg_configuration_desc(p_dst, dst_len, p_conf);
-  else
-    return UVCL_build_fs_jpeg_configuration_desc(p_dst, dst_len, p_conf);
 }
 
 static void build_uvc_fb_rgb565_fmt_desc(struct uvc_fb_fmt_desc *desc, UVCL_DescConf *p_conf)
@@ -584,7 +541,7 @@ static void build_uvc_fb_rgb565_fmt_desc(struct uvc_fb_fmt_desc *desc, UVCL_Desc
   desc->raw.bVariableSize = 0;
 }
 
-static void build_uvc_fb_grey_fmt_desc(struct uvc_fb_fmt_desc *desc, UVCL_DescConf *p_conf)
+static void build_uvc_fb_grey_fmt_desc(struct uvc_fb_fmt_desc *desc, UVCL_DescConf *p_conf, int payload_type)
 {
   const uint8_t fb_grey_guid_l8[] = {0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
                  0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71};
@@ -593,7 +550,7 @@ static void build_uvc_fb_grey_fmt_desc(struct uvc_fb_fmt_desc *desc, UVCL_DescCo
   int i;
 
   for (i = 0; i < 16; i++)
-    desc->raw.guidFormat[i] = p_conf->payload_type == UVCL_PAYLOAD_FB_GREY ? fb_grey_guid[i] : fb_grey_guid_l8[i];
+    desc->raw.guidFormat[i] = payload_type == UVCL_PAYLOAD_FB_GREY ? fb_grey_guid[i] : fb_grey_guid_l8[i];
   desc->raw.bBitsPerPixel = 8;
   desc->raw.bVariableSize = 0;
 }
@@ -635,7 +592,8 @@ static void build_uvc_fb_jpeg_fmt_desc(struct uvc_fb_fmt_desc *desc, UVCL_DescCo
 }
 
 static void build_uvc_fb_fmt_desc(struct uvc_fb_fmt_desc *desc, struct uvc_desc_head *next,
-                                       struct uvc_desc_head *parent, UVCL_DescConf *p_conf)
+                                  struct uvc_desc_head *parent, UVCL_DescConf *p_conf, uint8_t frame_desc_nb,
+                                  int payload_type, int idx)
 {
   desc->head.bLength = sizeof(desc->raw);
   desc->head.raw = (uint8_t *) &desc->raw;
@@ -644,8 +602,8 @@ static void build_uvc_fb_fmt_desc(struct uvc_fb_fmt_desc *desc, struct uvc_desc_
   desc->raw.bLength = sizeof(desc->raw);
   desc->raw.bDescriptorType = CS_INTERFACE;
   desc->raw.bDescriptorSubType = VS_FORMAT_FRAME_BASED;
-  desc->raw.bFormatIndex = 1;
-  desc->raw.bNumFrameDescriptors = 1;
+  desc->raw.bFormatIndex = idx + 1;
+  desc->raw.bNumFrameDescriptors = frame_desc_nb;
   desc->raw.bDefaultFrameIndex = 1;
   desc->raw.bAspectRatioX = 0;
   desc->raw.bAspectRatioY = 0;
@@ -653,13 +611,13 @@ static void build_uvc_fb_fmt_desc(struct uvc_fb_fmt_desc *desc, struct uvc_desc_
   desc->raw.bCopyProtect = 0;
 
   /* Fill guidFormat, bBitsPerPixel and bVariableSize according to payload type */
-  switch (p_conf->payload_type) {
+  switch (payload_type) {
   case UVCL_PAYLOAD_FB_RGB565:
     build_uvc_fb_rgb565_fmt_desc(desc, p_conf);
     break;
   case UVCL_PAYLOAD_FB_GREY:
   case UVCL_PAYLOAD_FB_GREY_D3DFMT_L8:
-    build_uvc_fb_grey_fmt_desc(desc, p_conf);
+    build_uvc_fb_grey_fmt_desc(desc, p_conf, payload_type);
     break;
   case UVCL_PAYLOAD_FB_H264:
     build_uvc_fb_h264_fmt_desc(desc, p_conf);
@@ -677,76 +635,82 @@ static void build_uvc_fb_fmt_desc(struct uvc_fb_fmt_desc *desc, struct uvc_desc_
   append_as_child(parent, &desc->head);
 }
 
-static void build_uvc_fb_rgb565_frame_desc(struct uvc_fb_frame_desc *desc, UVCL_DescConf *p_conf)
+static void build_uvc_fb_rgb565_frame_desc(struct uvc_fb_frame_desc *desc, int min_fps, int max_fps)
 {
-  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * p_conf->fps * 16;
-  desc->raw.dwMaxBitRate = desc->raw.dwMinBitRate;
+  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * min_fps * 16;
+  desc->raw.dwMaxBitRate = desc->raw.wWidth * desc->raw.wHeight * max_fps * 16;
   desc->raw.dwBytesPerLine = desc->raw.wWidth * 2;
 }
 
-static void build_uvc_fb_grey_frame_desc(struct uvc_fb_frame_desc *desc, UVCL_DescConf *p_conf)
+static void build_uvc_fb_grey_frame_desc(struct uvc_fb_frame_desc *desc, int min_fps, int max_fps)
 {
-  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * p_conf->fps * 8;
-  desc->raw.dwMaxBitRate = desc->raw.dwMinBitRate;
+  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * min_fps * 8;
+  desc->raw.dwMaxBitRate = desc->raw.wWidth * desc->raw.wHeight * max_fps * 8;
   desc->raw.dwBytesPerLine = desc->raw.wWidth * 1;
 }
 
-static void build_uvc_fb_h264_frame_desc(struct uvc_fb_frame_desc *desc, UVCL_DescConf *p_conf)
+static void build_uvc_fb_h264_frame_desc(struct uvc_fb_frame_desc *desc, int min_fps, int max_fps)
 {
-  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * p_conf->fps;
-  desc->raw.dwMaxBitRate = desc->raw.dwMinBitRate;
+  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * min_fps;
+  desc->raw.dwMaxBitRate = desc->raw.wWidth * desc->raw.wHeight * max_fps;
   desc->raw.dwBytesPerLine = 0;
 }
 
-static void build_uvc_fb_bgr3_frame_desc(struct uvc_fb_frame_desc *desc, UVCL_DescConf *p_conf)
+static void build_uvc_fb_bgr3_frame_desc(struct uvc_fb_frame_desc *desc, int min_fps, int max_fps)
 {
-  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * p_conf->fps * 24;
-  desc->raw.dwMaxBitRate = desc->raw.dwMinBitRate;
+  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * min_fps * 24;
+  desc->raw.dwMaxBitRate = desc->raw.wWidth * desc->raw.wHeight * max_fps * 24;
   desc->raw.dwBytesPerLine = desc->raw.wWidth * 3;
 }
 
-static void build_uvc_fb_jpeg_frame_desc(struct uvc_fb_frame_desc *desc, UVCL_DescConf *p_conf)
+static void build_uvc_fb_jpeg_frame_desc(struct uvc_fb_frame_desc *desc, int min_fps, int max_fps)
 {
-  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * p_conf->fps;
-  desc->raw.dwMaxBitRate = desc->raw.dwMinBitRate;
+  desc->raw.dwMinBitRate = desc->raw.wWidth * desc->raw.wHeight * min_fps;
+  desc->raw.dwMaxBitRate = desc->raw.wWidth * desc->raw.wHeight * max_fps;
   desc->raw.dwBytesPerLine = 0;
 }
 
 static void build_uvc_fb_frame_desc(struct uvc_fb_frame_desc *desc, struct uvc_desc_head *next,
-                                         struct uvc_desc_head *parent, UVCL_DescConf *p_conf)
+                                    struct uvc_desc_head *parent, UVCL_DescConf *p_conf, int idx, uint16_t wWidth,
+                                    uint16_t wHeight, int fps[UVCL_MAX_STREAM_CONF_NB], int fps_nb, int payload_type)
 {
-  desc->head.bLength = sizeof(desc->raw);
+  int min_fps = compute_min_fps(fps, fps_nb);
+  int max_fps = compute_max_fps(fps, fps_nb);
+  int i;
+
+  desc->head.bLength = 26 + 4 * fps_nb;
   desc->head.raw = (uint8_t *) &desc->raw;
   desc->head.gen = gen_default_desc;
   desc->head.next = next;
-  desc->raw.bLength = sizeof(desc->raw);;
+  desc->raw.bLength = 26 + 4 * fps_nb;
   desc->raw.bDescriptorType = CS_INTERFACE;
   desc->raw.bDescriptorSubType = VS_FRAME_FRAME_BASED;
-  desc->raw.bFrameIndex = 1;
+  desc->raw.bFrameIndex = idx + 1;
   desc->raw.bmCapabilities = 2;
-  desc->raw.wWidth = p_conf->width;
-  desc->raw.wHeight = p_conf->height;
-  desc->raw.dwDefaultFrameInterval = 10000000 / p_conf->fps;
-  desc->raw.bFrameIntervalType = 1;
-  desc->raw.dwFrameInterval[0] = 10000000 / p_conf->fps;
+  desc->raw.wWidth = wWidth;
+  desc->raw.wHeight = wHeight;
+  desc->raw.dwDefaultFrameInterval = 10000000 / fps[0];
+  desc->raw.bFrameIntervalType = fps_nb;
+  for (i = 0; i < fps_nb; i++)
+    desc->raw.dwFrameInterval[i] = 10000000 / fps[i];
 
   /* Fill dwMinBitRate, dwMaxBitRate and dwBytesPerLine according to payload type */
-  switch (p_conf->payload_type) {
+  switch (payload_type) {
   case UVCL_PAYLOAD_FB_RGB565:
-    build_uvc_fb_rgb565_frame_desc(desc, p_conf);
+    build_uvc_fb_rgb565_frame_desc(desc, min_fps, max_fps);
     break;
   case UVCL_PAYLOAD_FB_GREY:
   case UVCL_PAYLOAD_FB_GREY_D3DFMT_L8:
-    build_uvc_fb_grey_frame_desc(desc, p_conf);
+    build_uvc_fb_grey_frame_desc(desc, min_fps, max_fps);
     break;
   case UVCL_PAYLOAD_FB_H264:
-    build_uvc_fb_h264_frame_desc(desc, p_conf);
+    build_uvc_fb_h264_frame_desc(desc, min_fps, max_fps);
     break;
   case UVCL_PAYLOAD_FB_BGR3:
-    build_uvc_fb_bgr3_frame_desc(desc, p_conf);
+    build_uvc_fb_bgr3_frame_desc(desc, min_fps, max_fps);
     break;
   case UVCL_PAYLOAD_FB_JPEG:
-    build_uvc_fb_jpeg_frame_desc(desc, p_conf);
+    build_uvc_fb_jpeg_frame_desc(desc, min_fps, max_fps);
     break;
   default:
     assert(0);
@@ -755,7 +719,42 @@ static void build_uvc_fb_frame_desc(struct uvc_fb_frame_desc *desc, struct uvc_d
   append_as_child(parent, &desc->head);
 }
 
-static void build_xx_fb_conf_desc(struct uvc_fb_conf_desc *desc, UVCL_DescConf *p_conf, int wMaxPacketSize)
+static void build_uvc_color_desc(struct uvc_color_desc *desc, struct uvc_desc_head *next, struct uvc_desc_head *parent,
+                                 UVCL_DescConf *p_conf)
+{
+  desc->head.bLength = sizeof(desc->raw);
+  desc->head.raw = (uint8_t *) &desc->raw;
+  desc->head.gen = gen_default_desc;
+  desc->head.next = next;
+  desc->raw.bLength = sizeof(desc->raw);
+  desc->raw.bDescriptorType = CS_INTERFACE;
+  desc->raw.bDescriptorSubType = VS_COLORFORMAT;
+  desc->raw.bColorPrimaries = 1;
+  desc->raw.bTransferCharacteristics = 1;
+  desc->raw.bMatrixCoefficients = 4;
+
+  append_as_child(parent, &desc->head);
+}
+
+static void build_uvc_vs_ep_desc(struct uvc_vs_ep_desc *desc, struct uvc_desc_head *next, struct uvc_desc_head *parent,
+                                 UVCL_DescConf *p_conf, int wMaxPacketSize)
+{
+  desc->head.bLength = sizeof(desc->raw);
+  desc->head.raw = (uint8_t *) &desc->raw;
+  desc->head.gen = gen_default_desc;
+  desc->head.next = next;
+  desc->raw.bLength = sizeof(desc->raw);
+  desc->raw.bDescriptorType = 5;
+  desc->raw.bEndpointAddress = 0x81;
+  desc->raw.bmAttributes = 0x05;
+  desc->raw.wMaxPacketSize = wMaxPacketSize;
+  desc->raw.bInterval = 1;
+
+  append_as_child(parent, &desc->head);
+}
+
+static void build_head_conf_desc(struct uvc_head_conf_desc *desc, UVCL_DescConf *p_conf, uint16_t wMaxPacketSize, 
+                                 uint8_t bNumFormats, struct uvc_desc_head *next)
 {
   build_uvc_conf_desc(&desc->conf_desc, &desc->iad_desc.head, p_conf);
     build_uvc_iad_desc(&desc->iad_desc, &desc->std_vc_desc.head, &desc->conf_desc.head, p_conf);
@@ -764,74 +763,233 @@ static void build_xx_fb_conf_desc(struct uvc_fb_conf_desc *desc, UVCL_DescConf *
           build_uvc_camera_terminal_desc(&desc->cam_desc, &desc->tt_desc.head, &desc->class_vc_desc.head, p_conf);
           build_uvc_output_term_desc(&desc->tt_desc, &desc->std_vs_alt0_desc.head, &desc->class_vc_desc.head, p_conf);
       build_uvc_std_vs_desc(&desc->std_vs_alt0_desc, &desc->vs_input_desc.head, &desc->iad_desc.head, p_conf, 0, 0);
-        build_uvc_vs_input_desc(&desc->vs_input_desc, &desc->fb_fmt_desc.head, &desc->std_vs_alt0_desc.head, p_conf, 1);
-          build_uvc_fb_fmt_desc(&desc->fb_fmt_desc, &desc->fb_frame_desc.head, &desc->vs_input_desc.head, p_conf);
-            build_uvc_fb_frame_desc(&desc->fb_frame_desc, &desc->color_desc.head, &desc->fb_fmt_desc.head, p_conf);
-          build_uvc_color_desc(&desc->color_desc, &desc->std_vs_alt1_desc.head, &desc->fb_fmt_desc.head, p_conf);
-      build_uvc_std_vs_desc(&desc->std_vs_alt1_desc, &desc->ep_desc.head, &desc->iad_desc.head, p_conf, 1, 1);
-        build_uvc_vs_ep_desc(&desc->ep_desc, NULL, &desc->std_vs_alt1_desc.head, p_conf, wMaxPacketSize);
+        build_uvc_vs_input_desc(&desc->vs_input_desc, next, &desc->std_vs_alt0_desc.head, p_conf,
+                                bNumFormats);
+
 }
 
-static int UVCL_build_hs_fb_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
+static void compute_payload_res_and_fps(UVCL_DescConf *p_conf, uint8_t frame_desc_idx, uint16_t *wHeight,
+                                        uint16_t *wWidth, int *fps_nb, int fps[UVCL_MAX_STREAM_CONF_NB],
+                                        int payload_type, uint32_t *dwMaxVideoFrameSize)
 {
-  struct uvc_fb_conf_desc desc = { 0 };
-  int wMaxPacketSize = 1024 | ((USBL_PACKET_PER_MICRO_FRAME - 1) << 11);
+  uint8_t current_frame_desc_idx = 0xff;
+  uint32_t maxVideoFrameSize = 0;
+  int height = -1;
+  int width = -1;
+  int i;
 
-  assert(USBL_PACKET_PER_MICRO_FRAME >= 1 && USBL_PACKET_PER_MICRO_FRAME <= 3);
+  *fps_nb = 0;
+  *wWidth = 0;
+  *wHeight = 0;
+  for (i = 0; i < p_conf->streams_nb; i++) {
+    if (p_conf->streams[i].payload_type != payload_type)
+      continue;
 
-  build_xx_fb_conf_desc(&desc, p_conf, wMaxPacketSize);
-  update(&desc.conf_desc.head);
-  return generate(&desc.conf_desc.head, p_dst, dst_len);
+    if (p_conf->streams[i].width == *wWidth && p_conf->streams[i].height == *wHeight) {
+      fps[*fps_nb] = p_conf->streams[i].fps;
+      *fps_nb += 1;
+      continue;
+    }
 
-  assert(0);
+    current_frame_desc_idx++;
+    height = p_conf->streams[i].height;
+    width = p_conf->streams[i].width;
+    maxVideoFrameSize = p_conf->streams[i].dwMaxVideoFrameSize;
+
+    if (frame_desc_idx != current_frame_desc_idx)
+      continue;
+
+    *wWidth = width;
+    *wHeight = height;
+    if (dwMaxVideoFrameSize)
+      *dwMaxVideoFrameSize = maxVideoFrameSize ? maxVideoFrameSize : width * height;
+    fps[*fps_nb] = p_conf->streams[i].fps;
+    *fps_nb += 1;
+  }
+
+  assert(*fps_nb);
+  assert(*wWidth);
+  assert(*wHeight);
 }
 
-static int UVCL_build_fs_fb_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
+static void build_middle_yuv422_conf_desc(struct uvc_middle_yuv422_conf_desc *desc, UVCL_DescConf *p_conf,
+                                          struct uvc_desc_head *parent, uint8_t frame_desc_nb,
+                                          struct uvc_desc_head *next, int idx)
 {
-  struct uvc_fb_conf_desc desc = { 0 };
+  struct uvc_desc_head *next_for_frame;
+  int fps[UVCL_MAX_STREAM_CONF_NB];
+  uint16_t wHeight = 0;
+  uint16_t wWidth = 0;
+  int fps_nb;
+  int i;
 
-  build_xx_fb_conf_desc(&desc, p_conf, 1023);
-  update(&desc.conf_desc.head);
-  return generate(&desc.conf_desc.head, p_dst, dst_len);}
-
-static int UVCL_build_fb_rgb565_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
-{
-  if (p_conf->is_hs)
-    return UVCL_build_hs_fb_configuration_desc(p_dst, dst_len, p_conf);
-  else
-    return UVCL_build_fs_fb_configuration_desc(p_dst, dst_len, p_conf);
+  build_uvc_yuv422_fmt_desc(&desc->fmt, &desc->frame[0].head, parent, p_conf, frame_desc_nb, idx);
+  for (i = 0; i < frame_desc_nb; i++) {
+    next_for_frame = (i == frame_desc_nb - 1) ? &desc->color_desc.head : &desc->frame[i + 1].head;
+    compute_payload_res_and_fps(p_conf, i, &wHeight, &wWidth, &fps_nb, fps, UVCL_PAYLOAD_UNCOMPRESSED_YUY2, NULL);
+    build_uvc_yuv422_frame_desc(&desc->frame[i], next_for_frame, &desc->fmt.head, p_conf, i, wWidth, wHeight, fps,
+                                fps_nb);
+  }
+  /* FIXME : check parent is &desc->fmt.head */
+  build_uvc_color_desc(&desc->color_desc, next, &desc->fmt.head, p_conf);
 }
 
-static int UVCL_build_fb_grey_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
+static void build_middle_jpeg_conf_desc(struct uvc_middle_jpeg_conf_desc *desc, UVCL_DescConf *p_conf,
+                                      struct uvc_desc_head *parent, uint8_t frame_desc_nb,
+                                      struct uvc_desc_head *next, int idx)
 {
-  if (p_conf->is_hs)
-    return UVCL_build_hs_fb_configuration_desc(p_dst, dst_len, p_conf);
-  else
-    return UVCL_build_fs_fb_configuration_desc(p_dst, dst_len, p_conf);
+  struct uvc_desc_head *next_for_frame;
+  int fps[UVCL_MAX_STREAM_CONF_NB];
+  uint32_t dwMaxVideoFrameSize;
+  uint16_t wHeight = 0;
+  uint16_t wWidth = 0;
+  int fps_nb;
+  int i;
+
+  build_uvc_jpeg_fmt_desc(&desc->fmt, &desc->frame[0].head, parent, p_conf, frame_desc_nb, idx);
+  for (i = 0; i < frame_desc_nb; i++) {
+    next_for_frame = (i == frame_desc_nb - 1) ? &desc->color_desc.head : &desc->frame[i + 1].head;
+    compute_payload_res_and_fps(p_conf, i, &wHeight, &wWidth, &fps_nb, fps, UVCL_PAYLOAD_JPEG,
+                                &dwMaxVideoFrameSize);
+    build_uvc_jpeg_frame_desc(&desc->frame[i], next_for_frame, &desc->fmt.head, p_conf, i, wWidth, wHeight, fps,
+                                fps_nb,dwMaxVideoFrameSize);
+  }
+  /* FIXME : check parent is &desc->fmt.head */
+  build_uvc_color_desc(&desc->color_desc, next, &desc->fmt.head, p_conf);
 }
 
-static int UVCL_build_fb_h264_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
+static void build_middle_fb_conf_desc(struct uvc_middle_fb_conf_desc *desc, UVCL_DescConf *p_conf,
+                                      struct uvc_desc_head *parent, uint8_t frame_desc_nb,
+                                      struct uvc_desc_head *next, int payload_type, int idx)
 {
-  if (p_conf->is_hs)
-    return UVCL_build_hs_fb_configuration_desc(p_dst, dst_len, p_conf);
-  else
-    return UVCL_build_fs_fb_configuration_desc(p_dst, dst_len, p_conf);
+  struct uvc_desc_head *next_for_frame;
+  int fps[UVCL_MAX_STREAM_CONF_NB];
+  uint16_t wHeight = 0;
+  uint16_t wWidth = 0;
+  int fps_nb;
+  int i;
+
+  build_uvc_fb_fmt_desc(&desc->fmt, &desc->frame[0].head, parent, p_conf, frame_desc_nb, payload_type, idx);
+  for (i = 0; i < frame_desc_nb; i++) {
+    next_for_frame = (i == frame_desc_nb - 1) ? &desc->color_desc.head : &desc->frame[i + 1].head;
+    compute_payload_res_and_fps(p_conf, i, &wHeight, &wWidth, &fps_nb, fps, payload_type, NULL);
+    build_uvc_fb_frame_desc(&desc->frame[i], next_for_frame,  &desc->fmt.head, p_conf, i, wWidth, wHeight, fps,
+                            fps_nb, payload_type);
+  }
+  /* FIXME : check parent is &desc->fmt.head */
+  build_uvc_color_desc(&desc->color_desc, next, &desc->fmt.head, p_conf);
 }
 
-static int UVCL_build_fb_bgr3_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
+static void build_tail_conf_desc(struct uvc_tail_conf_desc *desc, UVCL_DescConf *p_conf, struct uvc_desc_head *parent,
+                                 uint16_t wMaxPacketSize)
 {
-  if (p_conf->is_hs)
-    return UVCL_build_hs_fb_configuration_desc(p_dst, dst_len, p_conf);
-  else
-    return UVCL_build_fs_fb_configuration_desc(p_dst, dst_len, p_conf);
+  build_uvc_std_vs_desc(&desc->std_vs_alt1_desc, &desc->ep_desc.head, parent, p_conf, 1, 1);
+    build_uvc_vs_ep_desc(&desc->ep_desc, NULL, &desc->std_vs_alt1_desc.head, p_conf, wMaxPacketSize);
 }
 
-static int UVCL_build_fb_jpeg_configuration_desc(uint8_t *p_dst, int dst_len, UVCL_DescConf *p_conf)
+static uint8_t compute_format_nb(UVCL_DescConf *p_conf, int payloads_type[UVCL_MAX_STREAM_CONF_NB])
 {
-  if (p_conf->is_hs)
-    return UVCL_build_hs_fb_configuration_desc(p_dst, dst_len, p_conf);
-  else
-    return UVCL_build_fs_fb_configuration_desc(p_dst, dst_len, p_conf);
+  int current_payload_type = p_conf->streams[0].payload_type;
+  uint8_t bNumFormats = 1;
+  int i;
+
+  payloads_type[0] = current_payload_type;
+  for (i = 1; i < p_conf->streams_nb; i++) {
+    if (p_conf->streams[i].payload_type == current_payload_type)
+      continue;
+
+    current_payload_type = p_conf->streams[i].payload_type;
+    payloads_type[bNumFormats++] = current_payload_type;
+  }
+
+  return bNumFormats;
+}
+
+static uint8_t compute_frame_nb(UVCL_DescConf *p_conf, int payload_type)
+{
+  uint8_t frame_desc_nb = 0;
+  int height = 0;
+  int width = 0;
+  int i;
+
+  for (i = 0; i < p_conf->streams_nb; i++) {
+    if (p_conf->streams[i].payload_type != payload_type)
+      continue;
+
+    if (p_conf->streams[i].width == width && p_conf->streams[i].height == height)
+      continue;
+
+    frame_desc_nb++;
+    height = p_conf->streams[i].height;
+    width = p_conf->streams[i].width;
+  }
+
+  return frame_desc_nb;
+}
+
+/* Public API */
+int UVCL_get_configuration_desc(void *p_dst, int dst_len, UVCL_DescConf *p_conf, UVCL_DescBuffer *p_buffer)
+{
+  int payloads_type[UVCL_MAX_STREAM_CONF_NB];
+  struct uvc_desc_head *next_for_format;
+  struct uvc_middle_conf_desc *middle;
+  uint16_t wMaxPacketSize = 1023;
+  struct uvc_head_conf_desc head;
+  struct uvc_tail_conf_desc tail;
+  struct buffer_allocator ba;
+  uint8_t bNumFormats;
+  int ret;
+  int i;
+
+  if (p_conf->is_hs) {
+    assert(USBL_PACKET_PER_MICRO_FRAME >= 1 && USBL_PACKET_PER_MICRO_FRAME <= 3);
+    wMaxPacketSize = 1024 | ((USBL_PACKET_PER_MICRO_FRAME - 1) << 11);
+  }
+
+  ba.buffer = p_buffer->buffer;
+  ba.buffer_size = p_buffer->buffer_size;
+  ret = ba_init(&ba);
+  if (ret)
+    return ret;
+  bNumFormats = compute_format_nb(p_conf, payloads_type);
+  middle = ba_alloc(&ba, bNumFormats * sizeof(struct uvc_middle_conf_desc));
+  if (!middle)
+    return -1;
+
+  memset(middle, 0, bNumFormats * sizeof(struct uvc_middle_conf_desc));
+  memset(&head, 0, sizeof(head));
+  memset(&tail, 0, sizeof(tail));
+
+  /* FIXME : not very clean to select yuv422.fmt.head even if it will be correct */
+  build_head_conf_desc(&head, p_conf, wMaxPacketSize, bNumFormats, &middle[0].yuv422.fmt.head);
+  for (i = 0; i < bNumFormats; i++) {
+    /* FIXME : not very clean to select yuv422.fmt.head even if it will be correct */
+    next_for_format = i == bNumFormats - 1 ? &tail.std_vs_alt1_desc.head : &middle[i + 1].yuv422.fmt.head;
+    uint8_t frame_desc_nb = compute_frame_nb(p_conf, payloads_type[i]);
+    switch (payloads_type[i]) {
+    case UVCL_PAYLOAD_UNCOMPRESSED_YUY2:
+      build_middle_yuv422_conf_desc(&middle[i].yuv422, p_conf, &head.vs_input_desc.head, frame_desc_nb, next_for_format, i);
+      break;
+    case UVCL_PAYLOAD_JPEG:
+      build_middle_jpeg_conf_desc(&middle[i].jpeg, p_conf, &head.vs_input_desc.head, frame_desc_nb, next_for_format, i);
+      break;
+    case UVCL_PAYLOAD_FB_RGB565:
+    case UVCL_PAYLOAD_FB_BGR3:
+    case UVCL_PAYLOAD_FB_GREY:
+    case UVCL_PAYLOAD_FB_H264:
+    case UVCL_PAYLOAD_FB_JPEG:
+    case UVCL_PAYLOAD_FB_GREY_D3DFMT_L8:
+      build_middle_fb_conf_desc(&middle[i].fb, p_conf, &head.vs_input_desc.head, frame_desc_nb, next_for_format,
+                                payloads_type[i], i);
+      break;
+    default:
+      assert(0);
+    }
+  }
+  build_tail_conf_desc(&tail, p_conf, &head.iad_desc.head, wMaxPacketSize);
+
+  update(&head.conf_desc.head);
+  return generate(&head.conf_desc.head, p_dst, dst_len);
 }
 
 int UVCL_get_device_desc(void *p_dst, int dst_len, int idx_manufacturer, int idx_product, int idx_serial)
@@ -896,34 +1054,4 @@ int UVCL_get_serial_string_desc(void *p_dst, int dst_len)
 
   gen_serial(serial);
   return UVCL_get_string_desc(p_dst, dst_len, serial);
-}
-
-int UVCL_get_configuration_desc(void *p_dst, int dst_len, UVCL_DescConf *p_conf)
-{
-  switch (p_conf->payload_type) {
-  case UVCL_PAYLOAD_UNCOMPRESSED_YUY2:
-    return UVCL_build_yuv422_configuration_desc(p_dst, dst_len, p_conf);
-    break;
-  case UVCL_PAYLOAD_JPEG:
-    return UVCL_build_jpeg_configuration_desc(p_dst, dst_len, p_conf);
-    break;
-  case UVCL_PAYLOAD_FB_RGB565:
-    return UVCL_build_fb_rgb565_configuration_desc(p_dst, dst_len, p_conf);
-    break;
-  case UVCL_PAYLOAD_FB_GREY:
-  case UVCL_PAYLOAD_FB_GREY_D3DFMT_L8:
-    return UVCL_build_fb_grey_configuration_desc(p_dst, dst_len, p_conf);
-    break;
-  case UVCL_PAYLOAD_FB_H264:
-    return UVCL_build_fb_h264_configuration_desc(p_dst, dst_len, p_conf);
-    break;
-  case UVCL_PAYLOAD_FB_BGR3:
-    return UVCL_build_fb_bgr3_configuration_desc(p_dst, dst_len, p_conf);
-    break;
-  case UVCL_PAYLOAD_FB_JPEG:
-    return UVCL_build_fb_jpeg_configuration_desc(p_dst, dst_len, p_conf);
-    break;
-  default:
-    return -1;
-  }
 }

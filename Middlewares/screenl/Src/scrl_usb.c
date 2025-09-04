@@ -296,12 +296,12 @@ static void SCRU_usb_init(PCD_TypeDef *pcd_instance, struct scrl_usb_ctx *ctx)
   UVCL_Conf_t conf = { 0 };
   int ret;
 
-  conf.width = ctx->common.screen.size.width;
-  conf.height = ctx->common.screen.size.height;
-  conf.fps = ctx->common.screen.fps;
-  conf.payload_type = cvt_uvcl_payload_format(ctx->common.screen.format);
+  conf.streams[0].width = ctx->common.screen.size.width;
+  conf.streams[0].height = ctx->common.screen.size.height;
+  conf.streams[0].fps = ctx->common.screen.fps;
+  conf.streams[0].payload_type = cvt_uvcl_payload_format(ctx->common.screen.format);
+  conf.streams_nb = 1;
   conf.is_immediate_mode = 1;
-
   ret = UVCL_Init(pcd_instance, &conf, &ctx->usb_cbs);
   assert(ret == 0);
 }

@@ -22,9 +22,9 @@ This application is prebuilt with a pose estimation model.
 | Name                          | Version             | Release notes
 |-----                          | -------             | -------------
 | STM32Cube.AI runtime          |  v10.2.0            |
-| ai-postprocessing-wrapper     |  v1.0.6             | [release notes](Middlewares/ai-postprocessing-wrapper/Release_Notes.md)
-| screenl                       |  v2.1.1             | [release notes](Middlewares/screenl/Release_Notes.md)
-| Camera Middleware             |  v1.4.2             | [release notes](Middlewares/Camera_Middleware/Release_Notes.md)
+| ai-postprocessing-wrapper     |  v1.0.7             | [release notes](Middlewares/ai-postprocessing-wrapper/Release_Notes.md)
+| screenl                       |  v3.0.0             | [release notes](Middlewares/screenl/Release_Notes.md)
+| Camera Middleware             |  v1.4.3             | [release notes](Middlewares/Camera_Middleware/Release_Notes.md)
 | lib_vision_models_pp Library  |  v0.10.0            | [release notes](Middlewares/lib_vision_models_pp/lib_vision_models_pp/README.md)
 | CMSIS                         |  v5.9.0             | [release notes](STM32Cube_FW_N6/Drivers/CMSIS/st_readme.txt)
 | STM32N6xx CMSIS Device        |  v1.2.0             | [release notes](STM32Cube_FW_N6/Drivers/CMSIS/Device/ST/STM32N6xx/Release_Notes.html)
@@ -50,7 +50,15 @@ This application is prebuilt with a pose estimation model.
 
 ## Update history
 
-### V2.1.0 / July 2025
+### v2.1.1 / August 2025
+
+- Update Camera Middleware to v1.4.3
+- Update lib_vision_models_pp to v0.10.0
+- Update ai-postprocessing-wrapper to v1.0.7
+- Update screenl to v3.0.0
+- Documentation improvements
+
+### v2.1.0 / July 2025
 
 - Update to Cube FW to v1.2.0
 - Update to STEdgeAI v2.2.0
@@ -61,15 +69,15 @@ This application is prebuilt with a pose estimation model.
   - Single pose estimation Movenet
   - Multi pose estimation Yolo v8
   - Semantic segmentation Deeplab v3
-- Add support for BlazeFace post processin
+- Add support for BlazeFace post processing
 
-### V2.0.0 / April 2025
+### v2.0.0 / April 2025
 
 - Add support of the NUCLEO-N657X0-Q board
 - Update miscellaneous drivers
 - Update Camera Middleware to v1.4.2
 - Miscellaneous refactoring
 
-### V1.0.0 / December 2024
+### v1.0.0 / December 2024
 
 Initial Release

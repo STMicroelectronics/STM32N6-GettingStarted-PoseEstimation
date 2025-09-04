@@ -18,6 +18,10 @@ None
 
 ## Update history
 
+### V3.0.0 / August 2025
+
+- Add support to expose multiple payload/resolution/frame rate
+
 ### V2.0.2 / May 2025
 
 - Update release notes format

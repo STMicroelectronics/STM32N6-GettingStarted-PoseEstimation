@@ -13,9 +13,13 @@ Screenl purpose is to abstract display for application. It currently supports LD
 
 | Name                          | Version             | Release notes
 |-----                          | -------             | -------------
-| uvcl                          | v2.0.2              | [release notes](uvcl/Release_Notes.md)
+| uvcl                          | v3.0.0              | [release notes](uvcl/Release_Notes.md)
 
 ## Update history
+
+### V3.0.0 / August 2025
+
+- align with new uvcl API
 
 ### V2.1.1 / May 2025
 

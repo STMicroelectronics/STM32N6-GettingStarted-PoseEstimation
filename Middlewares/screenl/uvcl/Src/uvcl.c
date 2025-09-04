@@ -18,6 +18,8 @@
 #include "uvcl.h"
 
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "uvcl_desc.h"
 #include "uvcl_internal.h"
@@ -76,6 +78,7 @@ static void UVCL_FillSentData(UVCL_Ctx_t *p_ctx, UVCL_OnFlyCtx_t *on_fly_ctx, ui
     on_fly_ctx->packet_nb--;
     on_fly_ctx->last_packet_size = packet_size - 2;
   }
+  on_fly_ctx->p_frame = p_frame;
   on_fly_ctx->cursor = p_frame;
   p_ctx->packet[1] ^= 1;
 
@@ -141,9 +144,11 @@ static int UVCL_handle_std_itf_setup_request(UVCL_Ctx_t *p_ctx, UVCL_SetupReq_t 
 
 static int UVCL_handle_probe_control_get_request(UVCL_Ctx_t *p_ctx, UVCL_SetupReq_t *req)
 {
+  int format_idx = p_ctx->UVC_VideoProbeControl.bFormatIndex;
+  int frame_idx = p_ctx->UVC_VideoProbeControl.bFrameIndex;
+
   p_ctx->UVC_VideoProbeControl.bmHint = 0;
-  p_ctx->UVC_VideoProbeControl.dwFrameInterval = UVC_INTERVAL(p_ctx->conf.fps);
-  p_ctx->UVC_VideoProbeControl.dwMaxVideoFrameSize = UVCL_ComputedwMaxVideoFrameSize(&p_ctx->conf);
+  p_ctx->UVC_VideoProbeControl.dwMaxVideoFrameSize = UVCL_ComputedwMaxVideoFrameSize(p_ctx, format_idx, frame_idx);
   p_ctx->UVC_VideoProbeControl.dwMaxPayloadTransferSize = req->dwMaxPayloadTransferSize;
   p_ctx->UVC_VideoProbeControl.dwClockFrequency = 48000000;
   /* should not zero but not clear what value is possible for uncompressed format */
@@ -262,6 +267,7 @@ static int UVCL_usb_init(PCD_HandleTypeDef *pcd_handle, PCD_TypeDef *pcd_instanc
     return ret;
 
   /* configure usb */
+  memset(pcd_handle, 0 , sizeof(*pcd_handle));
   pcd_handle->Instance = pcd_instance;
   pcd_handle->Init.dev_endpoints = 9;
   pcd_handle->Init.speed = PCD_SPEED_HIGH;
@@ -303,31 +309,76 @@ static int UVCL_cbs_check(UVCL_Callbacks_t *cbs)
   return 0;
 }
 
-static int UVCL_conf_check(UVCL_Conf_t *conf)
+static int UVCL_stream_check(UVCL_StreamConf_t *stream)
 {
-  if (!conf)
+  if (stream->width <= 0 || stream->height <= 0 || stream->fps <= 0)
     return -1;
 
-  if (conf->payload_type != UVCL_PAYLOAD_UNCOMPRESSED_YUY2 &&
-      conf->payload_type != UVCL_PAYLOAD_FB_RGB565 &&
-      conf->payload_type != UVCL_PAYLOAD_FB_GREY &&
-      conf->payload_type != UVCL_PAYLOAD_JPEG &&
-      conf->payload_type != UVCL_PAYLOAD_FB_H264 &&
-      conf->payload_type != UVCL_PAYLOAD_FB_BGR3 &&
-      conf->payload_type != UVCL_PAYLOAD_FB_JPEG &&
-      conf->payload_type != UVCL_PAYLOAD_FB_GREY_D3DFMT_L8
+  if (stream->payload_type != UVCL_PAYLOAD_UNCOMPRESSED_YUY2 &&
+      stream->payload_type != UVCL_PAYLOAD_FB_RGB565 &&
+      stream->payload_type != UVCL_PAYLOAD_FB_GREY &&
+      stream->payload_type != UVCL_PAYLOAD_JPEG &&
+      stream->payload_type != UVCL_PAYLOAD_FB_H264 &&
+      stream->payload_type != UVCL_PAYLOAD_FB_BGR3 &&
+      stream->payload_type != UVCL_PAYLOAD_FB_JPEG &&
+      stream->payload_type != UVCL_PAYLOAD_FB_GREY_D3DFMT_L8
       )
     return -1;
 
   return 0;
 }
 
-static void UVCL_vc_init(UVC_VideoControlTypeDef *vc)
+static int UVCL_conf_check(UVCL_Conf_t *conf)
+{
+  int ret;
+  int i;
+
+  if (!conf)
+    return -1;
+
+  if (conf->streams_nb <= 0 || conf->streams_nb > UVCL_MAX_STREAM_CONF_NB)
+    return -1;
+
+  for (i = 0; i < conf->streams_nb; i++) {
+    ret = UVCL_stream_check(&conf->streams[i]);
+    if (ret)
+      return ret;
+  }
+
+  return 0;
+}
+
+static int compare_streams(const void *p1, const void *p2)
+{
+  UVCL_StreamConf_t *s1 = (UVCL_StreamConf_t *) p1;
+  UVCL_StreamConf_t *s2 = (UVCL_StreamConf_t *) p2;
+
+  if (s1->payload_type != s2->payload_type)
+    return s1->payload_type - s2->payload_type;
+
+  if (s1->width != s2->width)
+    return s1->width - s2->width;
+
+  if (s1->height != s2->height)
+    return s1->height - s2->height;
+
+  assert(s1->fps != s2->fps);
+
+  return s1->fps - s2->fps;
+}
+
+static void UVCL_conf_reorder_streams(UVCL_Conf_t *conf)
+{
+  qsort(conf->streams, conf->streams_nb, sizeof(UVCL_StreamConf_t),
+          compare_streams);
+}
+
+static void UVCL_vc_init(UVC_VideoControlTypeDef *vc, int fps)
 {
   vc->bmHint = 0x0000U;
   vc->bFormatIndex = 0x01U;
   vc->bFrameIndex = 0x01U;
-  vc->dwFrameInterval = UVC_INTERVAL(30);
+  vc->dwFrameInterval = UVC_INTERVAL(fps);
   vc->wKeyFrameRate = 0x0000U;
   vc->wPFrameRate = 0x0000U;
   vc->wCompQuality = 0x0000U;
@@ -342,15 +393,43 @@ static void UVCL_vc_init(UVC_VideoControlTypeDef *vc)
   vc->bMaxVersion = 0x00U;
 }
 
+static void UVCL_ctx_init_streams_p(UVCL_Ctx_t *p_ctx)
+{
+  uint8_t bFormatIndex = 1;
+  uint8_t bFrameIndex = 1;
+  int i;
+
+  p_ctx->streams_p[0].bFormatIndex = bFormatIndex;
+  p_ctx->streams_p[0].bFrameIndex = bFrameIndex;
+  p_ctx->streams_p[0].dwFrameInterval = UVC_INTERVAL(p_ctx->conf.streams[0].fps);
+
+  for (i = 1; i < p_ctx->conf.streams_nb; i++) {
+    UVCL_StreamConf_t *prev =  &p_ctx->conf.streams[i - 1];
+    UVCL_StreamConf_t *current =  &p_ctx->conf.streams[i];
+
+    if (prev->payload_type != current->payload_type) {
+      bFormatIndex += 1;
+      bFrameIndex = 1;
+    } else if (prev->width != current->width || prev->height != current->height) {
+      bFrameIndex += 1;
+    }
+
+    p_ctx->streams_p[i].bFormatIndex = bFormatIndex;
+    p_ctx->streams_p[i].bFrameIndex = bFrameIndex;
+    p_ctx->streams_p[i].dwFrameInterval = UVC_INTERVAL(current->fps);
+  }
+}
+
 static void UVCL_ctx_init(UVCL_Ctx_t *p_ctx, UVCL_Conf_t *conf, UVCL_Callbacks_t *cbs)
 {
   p_ctx->conf = *conf;
   p_ctx->cbs = cbs;
   p_ctx->buffer_nb = USBX_BUFFER_NB;
   p_ctx->packet = packet;
-  p_ctx->frame_period_in_ms = 1000 / conf->fps;
-  UVCL_vc_init(&p_ctx->UVC_VideoCommitControl);
-  UVCL_vc_init(&p_ctx->UVC_VideoProbeControl);
+  p_ctx->frame_period_in_ms = 1000 / conf->streams[0].fps;
+  UVCL_ctx_init_streams_p(p_ctx);
+  UVCL_vc_init(&p_ctx->UVC_VideoCommitControl, conf->streams[0].fps);
+  UVCL_vc_init(&p_ctx->UVC_VideoProbeControl, conf->streams[0].fps);
 
   p_ctx_single = p_ctx;
 }
@@ -399,6 +478,7 @@ void UVCL_UpdateOnFlyCtx(UVCL_Ctx_t *p_ctx, int len)
     return ;
 
   /* Once displayed we can make frame free */
+  assert(on_fly_ctx->p_frame);
   p_ctx->cbs->frame_release(p_ctx->cbs, on_fly_ctx->p_frame);
 
   /* We reach last packet */
@@ -415,30 +495,48 @@ void UVCL_AbortOnFlyCtx(UVCL_Ctx_t *p_ctx)
   p_ctx->on_fly_ctx = NULL;
 }
 
-uint32_t UVCL_ComputedwMaxVideoFrameSize(UVCL_Conf_t *conf)
+uint32_t UVCL_ComputedwMaxVideoFrameSize(UVCL_Ctx_t *ctx, int format_idx, int frame_idx)
 {
-  uint32_t res = conf->width * conf->height * 2;
+  UVCL_Conf_t *conf = &ctx->conf;
+  uint32_t dwMaxVideoFrameSize;
+  int payload_type;
+  int height;
+  int width;
+  int res;
+  int i;
 
-  switch (conf->payload_type) {
+  for (i = 0; i < conf->streams_nb; i++) {
+    if (ctx->streams_p[i].bFormatIndex == format_idx && ctx->streams_p[i].bFrameIndex == frame_idx)
+      break;
+  }
+  assert(i != conf->streams_nb);
+
+  dwMaxVideoFrameSize = conf->streams[i].dwMaxVideoFrameSize;
+  payload_type = conf->streams[i].payload_type;
+  height = conf->streams[i].height;
+  width = conf->streams[i].width;
+
+  res = height * width;
+  switch (payload_type) {
   case UVCL_PAYLOAD_FB_GREY:
   case UVCL_PAYLOAD_FB_GREY_D3DFMT_L8:
-    res = conf->width * conf->height * 1;
+    res = width * height * 1;
     break;
   case UVCL_PAYLOAD_UNCOMPRESSED_YUY2:
   case UVCL_PAYLOAD_FB_RGB565:
-    res = conf->width * conf->height * 2;
+    res = width * height * 2;
     break;
   case UVCL_PAYLOAD_FB_BGR3:
-    res = conf->width * conf->height * 3;
+    res = width * height * 3;
     break;
   case UVCL_PAYLOAD_JPEG:
-    res = conf->dwMaxVideoFrameSize ?  conf->dwMaxVideoFrameSize : conf->width * conf->height;
+    res = dwMaxVideoFrameSize ?  dwMaxVideoFrameSize : width * height;
     break;
   case UVCL_PAYLOAD_FB_H264:
-    res = conf->dwMaxVideoFrameSize ?  conf->dwMaxVideoFrameSize : conf->width * conf->height;
+    res = dwMaxVideoFrameSize ?  dwMaxVideoFrameSize : width * height;
     break;
   case UVCL_PAYLOAD_FB_JPEG:
-    res = conf->dwMaxVideoFrameSize ?  conf->dwMaxVideoFrameSize : conf->width * conf->height;
+    res = dwMaxVideoFrameSize ?  dwMaxVideoFrameSize : width * height;
     break;
   default:
     assert(0);
@@ -447,10 +545,28 @@ uint32_t UVCL_ComputedwMaxVideoFrameSize(UVCL_Conf_t *conf)
   return res;
 }
 
+void UVCL_SetupStreamingStream(UVCL_Ctx_t *ctx, UVCL_StreamConf_t *stream)
+{
+  uint32_t dwFrameInterval = ctx->UVC_VideoCommitControl.dwFrameInterval;
+  uint8_t bFormatIndex = ctx->UVC_VideoCommitControl.bFormatIndex;
+  uint8_t bFrameIndex = ctx->UVC_VideoCommitControl.bFrameIndex;
+  int i;
+
+  for (i = 0; i < ctx->conf.streams_nb; i++) {
+    if (bFormatIndex == ctx->streams_p[i].bFormatIndex && bFrameIndex == ctx->streams_p[i].bFrameIndex &&
+        dwFrameInterval == ctx->streams_p[i].dwFrameInterval)
+      break;
+  }
+  assert(i < ctx->conf.streams_nb);
+
+  *stream = ctx->conf.streams[i];
+}
+
 /* public API */
 /* FIXME : handle errors correctly */
-int UVCL_Init(PCD_TypeDef *pcd_instance, UVCL_Conf_t *conf, UVCL_Callbacks_t *cbs)
+int UVCL_Init(PCD_TypeDef *pcd_instance, UVCL_Conf_t *conf_given, UVCL_Callbacks_t *cbs)
 {
+  UVCL_Conf_t conf = *conf_given;
   int ret;
 
   if (p_ctx_single)
@@ -460,24 +576,26 @@ int UVCL_Init(PCD_TypeDef *pcd_instance, UVCL_Conf_t *conf, UVCL_Callbacks_t *cb
   if (ret)
     return ret;
 
-  ret = UVCL_conf_check(conf);
+  ret = UVCL_conf_check(&conf);
   if (ret)
     return ret;
+
+  UVCL_conf_reorder_streams(&conf);
 
   ret = UVCL_usb_init(&uvcl_pcd_handle, pcd_instance);
   if (ret)
     return ret;
 
 #ifdef UVC_LIB_USE_USBX
-  ret = UVCL_usbx_init(&ctx, &uvcl_pcd_handle, pcd_instance, conf);
+  ret = UVCL_usbx_init(&ctx, &uvcl_pcd_handle, pcd_instance, &conf);
 #endif
 #ifdef UVC_LIB_USE_STM32_USBD
-  ret = UVCL_stm32_usbd_init(&ctx, &uvcl_pcd_handle, pcd_instance, conf);
+  ret = UVCL_stm32_usbd_init(&ctx, &uvcl_pcd_handle, pcd_instance, &conf);
 #endif
   if (ret)
     return ret;
 
-  UVCL_ctx_init(&ctx, conf, cbs);
+  UVCL_ctx_init(&ctx, &conf, cbs);
 
   return HAL_PCD_Start(&uvcl_pcd_handle);
 }
@@ -518,6 +636,11 @@ int UVCL_ShowFrame(void *frame, int frame_size)
   p_ctx->frame_size = frame_size;
   __DMB();
   p_ctx->p_frame = frame;
+
+  if (p_ctx->state == UVCL_STATUS_STOP) {
+    p_ctx->p_frame = NULL;
+    return -1;
+  }
 
   return 0;
 }

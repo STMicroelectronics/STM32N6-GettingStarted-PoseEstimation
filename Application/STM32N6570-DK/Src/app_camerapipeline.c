@@ -130,7 +130,7 @@ void CameraPipeline_Init(uint32_t *lcd_bg_width, uint32_t *lcd_bg_height, uint32
   cam_conf.anti_flicker = 0;
   cam_conf.mirror_flip = CAMERA_FLIP;
 
-  ret = CMW_CAMERA_Init(&cam_conf);
+  ret = CMW_CAMERA_Init(&cam_conf, NULL);
   assert(ret == CMW_ERROR_NONE);
   DCMIPP_PipeInitDisplay(&cam_conf, lcd_bg_width, lcd_bg_height);
   DCMIPP_PipeInitNn(pitch_nn);

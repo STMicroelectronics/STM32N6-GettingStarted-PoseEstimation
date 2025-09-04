@@ -34,19 +34,26 @@ You can configure following items at build time :
 
 ```C
 typedef struct {
+  int payload_type;
   int width;
   int height;
   int fps;
-  int payload_type;
-  int is_immediate_mode;
   /* Only for variable size payload. If zero a default value is choose */
   uint32_t dwMaxVideoFrameSize;
+} UVCL_StreamConf_t;
+```
+
+```C
+typedef struct {
+  UVCL_StreamConf_t streams[UVCL_MAX_STREAM_CONF_NB];
+  int streams_nb;
+  int is_immediate_mode;
 } UVCL_Conf_t;
 ```
 
 ```C
 typedef struct uvcl_callbacks {
-  void (*streaming_active)(struct uvcl_callbacks *cbs);
+  void (*streaming_active)(struct uvcl_callbacks *cbs, UVCL_StreamConf_t stream);
   void (*streaming_inactive)(struct uvcl_callbacks *cbs);
   void (*frame_release)(struct uvcl_callbacks *cbs, void *frame);
 } UVCL_Callbacks_t;
