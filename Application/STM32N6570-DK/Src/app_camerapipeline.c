@@ -21,14 +21,8 @@
 #include "app_camerapipeline.h"
 #include "app_config.h"
 #include "crop_img.h"
+#include "stai_network.h"
 
-#if defined(USE_IMX335_SENSOR)
-  #define GAMMA_CONVERSION 0
-#elif defined(USE_VD66GY_SENSOR)
-  #define GAMMA_CONVERSION 0
-#elif defined(USE_VD55G1_SENSOR)
-  #define GAMMA_CONVERSION 0
-#endif
 
 /* Leave the driver use the default resolution */
 #define CAMERA_WIDTH 0
@@ -75,7 +69,7 @@ static void DCMIPP_PipeInitDisplay(CMW_CameraInit_t *camConf, uint32_t *bg_width
   dcmipp_conf.output_format = DCMIPP_PIXEL_PACKER_FORMAT_RGB565_1;
   dcmipp_conf.output_bpp = 2;
   dcmipp_conf.mode = aspect_ratio;
-  dcmipp_conf.enable_gamma_conversion = GAMMA_CONVERSION;
+  dcmipp_conf.enable_gamma_conversion = 0;
   uint32_t pitch;
   ret = CMW_CAMERA_SetPipeConfig(DCMIPP_PIPE1, &dcmipp_conf, &pitch);
   assert(ret == HAL_OK);
@@ -101,13 +95,13 @@ static void DCMIPP_PipeInitNn(uint32_t *pitch)
     aspect_ratio = CMW_Aspect_ratio_fit;
   }
 
-  dcmipp_conf.output_width = NN_WIDTH;
-  dcmipp_conf.output_height = NN_HEIGHT;
+  dcmipp_conf.output_width = STAI_NETWORK_IN_1_WIDTH;
+  dcmipp_conf.output_height = STAI_NETWORK_IN_1_HEIGHT;
   dcmipp_conf.output_format = DCMIPP_PIXEL_PACKER_FORMAT_RGB888_YUV444_1;
-  dcmipp_conf.output_bpp = NN_BPP;
+  dcmipp_conf.output_bpp = STAI_NETWORK_IN_1_CHANNEL;
   dcmipp_conf.mode = aspect_ratio;
   dcmipp_conf.enable_swap = COLOR_MODE;
-  dcmipp_conf.enable_gamma_conversion = GAMMA_CONVERSION;
+  dcmipp_conf.enable_gamma_conversion = 0;
   ret = CMW_CAMERA_SetPipeConfig(DCMIPP_PIPE2, &dcmipp_conf, pitch);
   assert(ret == HAL_OK);
 }
@@ -126,8 +120,6 @@ void CameraPipeline_Init(uint32_t *lcd_bg_width, uint32_t *lcd_bg_height, uint32
   cam_conf.width = CAMERA_WIDTH;
   cam_conf.height = CAMERA_HEIGHT;
   cam_conf.fps = CAMERA_FPS;
-  cam_conf.pixel_format = 0; /* Default; Not implemented yet */
-  cam_conf.anti_flicker = 0;
   cam_conf.mirror_flip = CAMERA_FLIP;
 
   ret = CMW_CAMERA_Init(&cam_conf, NULL);
@@ -186,4 +178,9 @@ int CMW_CAMERA_PIPE_FrameEventCallback(uint32_t pipe)
       break;
   }
   return 0;
+}
+
+void CMW_CAMERA_PIPE_ErrorCallback(uint32_t pipe)
+{
+  /* FIXME : Need to tune sensor/ipplug so we can remove this implementation */
 }

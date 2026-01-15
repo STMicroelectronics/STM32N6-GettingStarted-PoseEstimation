@@ -1,15 +1,15 @@
 # __Pose Estimation Getting Started__
 
-This project provides a real-time embedded environment for STM32 microcontrollers to execute [STEdgeAI](https://www.st.com/en/development-tools/stedgeai-core.html) generated models, specifically targeting the pose estimation application. The code prioritizes clarity and understandability over performance, making it an ideal starting point for further development.
+---
 
-![Image sample](_htmresc/sample.PNG)  
+This project provides a real-time embedded environment for STM32N6 microcontroller to execute [STEdgeAI](https://www.st.com/en/development-tools/stedgeai-core.html) generated models, specifically targeting the pose estimation application. The code prioritizes clarity and understandability over performance, making it an ideal starting point for further development.
+
+![Image sample](_htmresc/sample.PNG)
 Detected keypoints are displayed.
 
 This is a standalone project that can be deployed directly to hardware. It is also integrated into the [ST ModelZoo repository](https://github.com/STMicroelectronics/stm32ai-modelzoo-services), and is required to deploy the pose estimation use case. The ModelZoo enables you to train, evaluate, and automatically deploy any supported model. If you wish to use this project as part of the ModelZoo, please refer to the [Quickstart using stm32ai-modelzoo-services](#quickstart-using-stm32ai-modelzoo-services) section for instructions.
 
 This README provides an overview of the application. Additional documentation is available in the [Doc](./Doc/) folder.
-
-__Note__: Please note that the NUCLEO-N657X0-Q board does not support any model for this use case at the moment.
 
 ---
 
@@ -33,6 +33,7 @@ __Note__: Please note that the NUCLEO-N657X0-Q board does not support any model 
       - [STM32CubeIDE](#stm32cubeide-1)
       - [Makefile](#makefile-1)
     - [Programming Firmware to External Flash](#program-the-firmware-in-the-external-flash)
+- [How to update my project with a new version of ST Edge AI](#how-to-update-my-project-with-a-new-version-of-st-edge-ai)
 - [Known Issues and Limitations](#known-issues-and-limitations)
 
 **Documentation Folder:**
@@ -42,8 +43,8 @@ __Note__: Please note that the NUCLEO-N657X0-Q board does not support any model 
 - [Camera Build Options](Doc/Build-Options.md#cameras-module)
 - [Camera Orientation](Doc/Build-Options.md#camera-orientation)
 - [Aspect Ratio Mode](Doc/Build-Options.md#aspect-ratio-mode)
-- [Deploying tflite Model on STM32N6570-DK](Doc/Deploy-your-tflite-Model-STM32N6570-DK.md)
-- [Deploying tflite Model on NUCLEO-N657X0-Q](Doc/Deploy-your-tflite-Model-NUCLEO-N657X0-Q.md)
+- [Neural-ART: Description and Operation](Doc/Neural-ART-Description-and-Operation.md)
+- [Deploying your Quantized Model](Doc/Deploy-your-Quantized-Model.md)
 - [Programming Hex Files with STM32CubeProgrammer](Doc/Program-Hex-Files-STM32CubeProgrammer.md)
 
 ---
@@ -79,7 +80,8 @@ Supported camera modules:
 
 - Provided IMX335 camera module
 - [STEVAL-55G1MBI](https://www.st.com/en/evaluation-tools/steval-55g1mbi.html)
-- [STEVAL-66GYMAI1](https://www.st.com/en/evaluation-tools/steval-66gymai.html)
+- [STEVAL-66GYMAI](https://www.st.com/en/evaluation-tools/steval-66gymai.html)
+- [STEVAL-1943-MC1](https://www.st.com/en/evaluation-tools/steval-1943-mc1.html)
 
 For the Nucleo board, one of the following displays is required:
 
@@ -99,7 +101,7 @@ NUCLEO-N657X0-Q board with SPI display.
 
 - [STM32CubeIDE](https://www.st.com/content/st_com/en/products/development-tools/software-development-tools/stm32-software-development-tools/stm32-ides/stm32cubeide.html) (__v1.17.0__)
 - [STM32CubeProgrammer](https://www.st.com/en/development-tools/stm32cubeprog.html) (__v2.18.0__)
-- [STEdgeAI](https://www.st.com/en/development-tools/stedgeai-core.html) (__v2.2.0__)
+- [STEdgeAI](https://www.st.com/en/development-tools/stedgeai-core.html) (__v3.0.0__)
 
 ---
 
@@ -130,33 +132,42 @@ __Note__: This C-based application is already included in the ModelZoo repositor
 
 ## Quickstart using Prebuilt Binaries
 
+The prebuilt binaries are an assembly of several binaries:
+  - FSBL (First Stage Boot Loader, loading the application from flash to RAM)
+  - The application
+  - The weights of the neural network model
+
 ### STM32N6570-DK
 
 To program the board's external flash, follow these steps:
 
 1. Set the board to [development mode](#boot-modes).
-2. Program `Binary/ai_fsbl.hex` (First Stage Boot Loader).
-3. Program `Binary/STM32N6570-DK_network_data.hex` (network parameters; only required when the network changes).
-4. Program `Binary/STM32N6570-DK_GettingStarted_PoseEstimation.hex` (firmware application).
-5. Set the board to [boot from flash mode](#boot-modes).
-6. Power cycle the board.
+2. Program `Binary/STM32N6570-DK/STM32N6570-DK_GettingStarted_PoseEstimation.hex`.
+3. Set the board to [boot from flash mode](#boot-modes).
+4. Power cycle the board.
+5. Place a person in front of the camera to estimate their pose.
 
-__Note__: The `Binary/STM32N6570-DK_GettingStarted_PoseEstimation.hex` firmware is built for MB1939 STM32N6570-DK REV C02 with any of the listed camera modules.
-
-### NUCLEO-N657X0-Q
+### NUCLEO-N657X0-Q USB/UVC
 
 To program the board's external flash, follow these steps:
 
 1. Set the board to [development mode](#boot-modes).
-2. Program `Binary/ai_fsbl.hex` (First Stage Boot Loader).
-3. Program `Binary/NUCLEO-N657X0-Q_network_data.hex` (network parameters; only required when the network changes).
-4. Program `Binary/NUCLEO-N657X0-Q_GettingStarted_PoseEstimation.hex` (firmware application).
-5. Set the board to [boot from flash mode](#boot-modes).
-6. Connect a USB cable to the USB OTG port (CN8), next to the RJ45 port. Connect the other end to a USB host (PC, USB hub, etc.) for data transmission via USB/UVC.
-7. Power cycle the board.
-8. Start the camera application on the host. On Windows, search for "camera" in the Start menu.
+2. Program `Binary/NUCLEO-N657X0-Q/USB-UVC-Display/NUCLEO-N657X0-Q_GettingStarted_PoseEstimation-uvc.hex`.
+3. Set the board to [boot from flash mode](#boot-modes).
+4. Connect a USB cable to the USB OTG port (CN8), next to the RJ45 port. Connect the other end to a USB host (PC, USB hub, etc.) for data transmission via USB/UVC.
+5. Power cycle the board.
+6. Start the camera application on the host. On Windows, search for "camera" in the Start menu.
+7. Place a person in front of the camera to estimate their pose.
 
-__Note__: The `Binary/NUCLEO-N657X0-Q_GettingStarted_PoseEstimation.hex` firmware is built for MB1940 NUCLEO-N657X0-Q REV C01 with USB/UVC host display and any of the listed camera modules.
+### NUCLEO-N657X0-Q SPI
+
+To program the board's external flash, follow these steps:
+
+1. Set the board to [development mode](#boot-modes).
+2. Program `Binary/NUCLEO-N657X0-Q/SPI-Display/NUCLEO-N657X0-Q_GettingStarted_PoseEstimation-spi.hex`.
+3. Set the board to [boot from flash mode](#boot-modes).
+4. Power cycle the board.
+5. Place a person in front of the camera to estimate their pose.
 
 ---
 
@@ -173,14 +184,7 @@ Ensure the STM32CubeProgrammer `bin` folder is in your PATH.
 ```bash
 export DKEL="<STM32CubeProgrammer_N6 Install Folder>/bin/ExternalLoader/MX66UW1G45G_STM32N6570-DK.stldr"
 
-# First Stage Boot Loader
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $DKEL -hardRst -w Binary/ai_fsbl.hex
-
-# Network parameters and biases
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $DKEL -hardRst -w Binary/STM32N6570-DK_network_data.hex
-
-# Application Firmware
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $DKEL -hardRst -w Binary/STM32N6570-DK_GettingStarted_PoseEstimation.hex
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $DKEL -hardRst -w Binary/STM32N6570-DK/STM32N6570-DK_GettingStarted_PoseEstimation.hex
 ```
 
 ---
@@ -192,21 +196,18 @@ Ensure the STM32CubeProgrammer `bin` folder is in your PATH.
 ```bash
 export NUEL="<STM32CubeProgrammer_N6 Install Folder>/bin/ExternalLoader/MX25UM51245G_STM32N6570-NUCLEO.stldr"
 
-# First Stage Boot Loader
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w Binary/ai_fsbl.hex
+# USB/UVC
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w Binary/NUCLEO-N657X0-Q/USB-UVC-Display/NUCLEO-N657X0-Q_GettingStarted_PoseEstimation-uvc.hex
 
-# Network parameters and biases
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w Binary/NUCLEO-N657X0-Q_network_data.hex
-
-# Application Firmware
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w Binary/NUCLEO-N657X0-Q_GettingStarted_PoseEstimation.hex
+# SPI
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w Binary/NUCLEO-N657X0-Q/SPI-Display/NUCLEO-N657X0-Q_GettingStarted_PoseEstimation-spi.hex
 ```
 
 ---
 
 ## Quickstart using Source Code
 
-Before building and running the application, you must program `<board_name>_network_data.hex` (model weights and biases). This only needs to be done once unless you change the AI model. See [Quickstart using prebuilt binaries](#quickstart-using-prebuilt-binaries) for details.
+Before building and running the application, you must program `Model/<board_name>/network_data.hex` (model weights and biases). This only needs to be done once unless you change the AI model. See [Quickstart using prebuilt binaries](#quickstart-using-prebuilt-binaries) for details.
 
 For more information about boot modes, see [Boot Overview](Doc/Boot-Overview.md).
 
@@ -216,7 +217,7 @@ __Note__: To select the NUCLEO-N657X0-Q display interface, use the appropriate b
 
 ### Application Build and Run - Dev Mode
 
-Set your board to [development mode](#development-mode).
+Set your board to [development mode](#boot-modes).
 
 #### STM32CubeIDE
 
@@ -247,7 +248,7 @@ Navigate to `Application/<board_name>/` and run the following commands (ensure r
 
 ### Application Build and Run - Boot from Flash
 
-Set your board to [development mode](#development-mode).
+Set your board to [development mode](#boot-modes).
 
 #### Build the Application
 
@@ -265,21 +266,27 @@ make -j8
 
 #### Program the Firmware in the External Flash
 
-After building the application, you can add a signature to the binary file:
+After building the application, you must sign the binary file:
 
 ```bash
 STM32_SigningTool_CLI -bin build/Application/<board_name>/Project.bin -nk -t ssbl -hv 2.3 -o build/Application/<board_name>/Project_sign.bin
 ```
 
-Program the signed binary at address `0x70100000`.
+Program the signed binary at address `0x70100000`, as well as the FSBL and network parameters.
 
 On STM32N6570-DK:
 
 ```bash
 export DKEL="<STM32CubeProgrammer_N6 Install Folder>/bin/ExternalLoader/MX66UW1G45G_STM32N6570-DK.stldr"
 
+# First Stage Boot Loader
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $DKEL -hardRst -w FSBL/ai_fsbl.hex
+
 # Adjust build path as needed
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $DKEL -hardRst -w build/Application/<board_name>/Project_sign.bin 0x70100000
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $DKEL -hardRst -w build/Application/STM32N6570-DK/Project_sign.bin 0x70100000
+
+# Network parameters
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $DKEL -hardRst -w Model/STM32N6570-DK/network_data.hex
 ```
 
 On NUCLEO-N657X0-Q:
@@ -287,13 +294,30 @@ On NUCLEO-N657X0-Q:
 ```bash
 export NUEL="<STM32CubeProgrammer_N6 Install Folder>/bin/ExternalLoader/MX25UM51245G_STM32N6570-NUCLEO.stldr"
 
+# First Stage Boot Loader
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w FSBL/ai_fsbl.hex
+
 # Adjust build path as needed
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w build/Application/<board_name>/Project_sign.bin 0x70100000
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w build/Application/NUCLEO-N657X0-Q/Project_sign.bin 0x70100000
+
+# Network parameters
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -el $NUEL -hardRst -w Model/NUCLEO-N657X0-Q/network_data.hex
 ```
 
 __Note__: Only the application binary needs to be programmed if `fsbl` and `network_data.hex` have already been programmed.
 
-Set your board to [boot from flash](#boot-from-flash) mode and power cycle to boot from external flash.
+Set your board to [boot from flash](#boot-modes) mode and power cycle to boot from external flash.
+
+---
+
+## How to update my project with a new version of ST Edge AI
+
+The neural network model files (`network.c/h`, `stai_network.c/h`, etc.) included in this project were generated using [STEdgeAI](https://www.st.com/en/development-tools/stedgeai-core.html) version 3.0.0.
+
+Using a different version of STEdgeAI to generate these model files may result in the following compile-time error:  
+`Possible mismatch in ll_aton library used`.
+
+If you encounter this error, please follow the STEdgeAI instructions on [How to update my project with a new version of ST Edge AI Core](https://stedgeai-dc.st.com/assets/embedded-docs/stneuralart_faqs_update_version.html) to update your project.
 
 ---
 

@@ -15,6 +15,9 @@
  *
  ******************************************************************************
  */
+#include <string.h>
+#include <unistd.h>
+
 #include "cmw_camera.h"
 #include "scrl.h"
 #include "stm32n6xx_nucleo_bus.h"
@@ -24,8 +27,8 @@
 #include "app_fuseprogramming.h"
 #include "stm32_lcd_ex.h"
 #include "app_postprocess.h"
-#include "ll_aton_rt_user_api.h"
-LL_ATON_DECLARE_NAMED_NN_INSTANCE_AND_INTERFACE(Default);
+#include "stai.h"
+#include "stai_network.h"
 #include "app_camerapipeline.h"
 #include "main.h"
 #include <stdio.h>
@@ -41,7 +44,6 @@ LL_ATON_DECLARE_NAMED_NN_INSTANCE_AND_INTERFACE(Default);
   #error "PostProcessing type not supported"
 #endif
 
-#define MAX_NUMBER_OUTPUT 5
 #define LCD_BG_WIDTH  SCREEN_WIDTH
 #define LCD_BG_HEIGHT SCREEN_HEIGHT
 #define LCD_FG_WIDTH  SCREEN_WIDTH
@@ -50,6 +52,13 @@ LL_ATON_DECLARE_NAMED_NN_INSTANCE_AND_INTERFACE(Default);
 #define LCD_FG_FRAMEBUFFER_SIZE  (LCD_FG_WIDTH * LCD_FG_HEIGHT * 2)
 
 #define UTIL_LCD_COLOR_TRANSPARENT 0
+
+#ifndef APP_GIT_SHA1_STRING
+#define APP_GIT_SHA1_STRING "dev"
+#endif
+#ifndef APP_VERSION_STRING
+#define APP_VERSION_STRING "unversioned"
+#endif
 
 
 typedef struct
@@ -96,14 +105,15 @@ Rectangle_TypeDef lcd_fg_area = {
 
 BINDINGS;
 
+UART_HandleTypeDef huart1;
 volatile int32_t cameraFrameReceived;
-uint8_t *nn_in;
+stai_ptr nn_in;
 
 #define ALIGN_TO_16(value) (((value) + 15) & ~15)
 
 /* for models not multiple of 16; needs a working buffer */
-#if (NN_WIDTH * NN_BPP) != ALIGN_TO_16(NN_WIDTH * NN_BPP)
-#define DCMIPP_OUT_NN_LEN (ALIGN_TO_16(NN_WIDTH * NN_BPP) * NN_HEIGHT)
+#if (STAI_NETWORK_IN_1_WIDTH * STAI_NETWORK_IN_1_CHANNEL) != ALIGN_TO_16(STAI_NETWORK_IN_1_WIDTH * STAI_NETWORK_IN_1_CHANNEL)
+#define DCMIPP_OUT_NN_LEN (ALIGN_TO_16(STAI_NETWORK_IN_1_WIDTH * STAI_NETWORK_IN_1_CHANNEL) * STAI_NETWORK_IN_1_HEIGHT)
 #define DCMIPP_OUT_NN_BUFF_LEN (DCMIPP_OUT_NN_LEN + 32 - DCMIPP_OUT_NN_LEN%32)
 
 __attribute__ ((aligned (32)))
@@ -112,18 +122,21 @@ uint8_t dcmipp_out_nn[DCMIPP_OUT_NN_BUFF_LEN];
 uint8_t *dcmipp_out_nn;
 #endif
 
+/* model */
+STAI_NETWORK_CONTEXT_DECLARE(network_context, STAI_NETWORK_CONTEXT_SIZE)
 /* Lcd Background Buffer */
 __attribute__ ((aligned (32)))
-uint8_t lcd_bg_buffer[LCD_BG_WIDTH * LCD_BG_HEIGHT * 2];
+static uint8_t lcd_bg_buffer[LCD_BG_WIDTH * LCD_BG_HEIGHT * 2];
 /* Lcd Foreground Buffer */
 __attribute__ ((aligned (32)))
-uint8_t lcd_fg_buffer[2][LCD_FG_WIDTH * LCD_FG_HEIGHT * 2];
+static uint8_t lcd_fg_buffer[2][LCD_FG_WIDTH * LCD_FG_HEIGHT * 2];
 static int lcd_fg_buffer_rd_idx;
 /* screen buffer */
 __attribute__ ((aligned (32)))
 static uint8_t screen_buffer[LCD_FG_WIDTH * LCD_FG_HEIGHT * 2];
 
 static void SystemClock_Config(void);
+static void CONSOLE_Config(void);
 static void NPURam_enable(void);
 static void NPUCache_config(void);
 static void Display_NetworkOutput(void *p_postprocess, uint32_t inference_ms);
@@ -133,8 +146,8 @@ static void set_clk_sleep_mode(void);
 static void IAC_Config(void);
 static void Display_WelcomeScreen(void);
 static void Hardware_init(void);
-static void Run_Inference(void);
-static void NeuralNetwork_init(uint32_t *nnin_length, float32_t *nn_out[], int *number_output, int32_t nn_out_len[]);
+static void Run_Inference(stai_network *network_instance);
+static void NeuralNetwork_init(uint32_t *nn_in_length, stai_ptr *nn_out, stai_size *number_output, int32_t nn_out_len[]);
 
 
 /**
@@ -144,19 +157,40 @@ static void NeuralNetwork_init(uint32_t *nnin_length, float32_t *nn_out[], int *
   */
 int main(void)
 {
-
   Hardware_init();
+
+  /*** App header *************************************************************/
+  printf("========================================\n");
+  printf("STM32N6-GettingStarted-PoseEstimation %s (%s)\n", APP_VERSION_STRING, APP_GIT_SHA1_STRING);
+  printf("Build date & time: %s %s\n", __DATE__, __TIME__);
+  #if defined(__GNUC__)
+  printf("Compiler: GCC %d.%d.%d\n", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#elif defined(__ICCARM__)
+  printf("Compiler: IAR EWARM %d.%d.%d\n", __VER__ / 1000000, (__VER__ / 1000) % 1000 ,__VER__ % 1000);
+#else
+  printf("Compiler: Unknown\n");
+#endif
+  printf("HAL: %lu.%lu.%lu\n", __STM32N6xx_HAL_VERSION_MAIN, __STM32N6xx_HAL_VERSION_SUB1, __STM32N6xx_HAL_VERSION_SUB2);
+  printf("STEdgeAI Tools: %d.%d.%d\n", STAI_TOOLS_VERSION_MAJOR, STAI_TOOLS_VERSION_MINOR, STAI_TOOLS_VERSION_MICRO);
+  printf("NN model: %s\n", STAI_NETWORK_ORIGIN_MODEL_NAME);
+  printf("========================================\n");
 
   /*** NN Init ****************************************************************/
   uint32_t pitch_nn = 0;
   uint32_t nn_in_len = 0;
-  int number_output = 0;
-  float32_t *nn_out[MAX_NUMBER_OUTPUT];
-  int32_t nn_out_len[MAX_NUMBER_OUTPUT];
+  stai_size number_output = 0;
+  stai_ptr nn_out[STAI_NETWORK_OUT_NUM] = {0};
+  int32_t nn_out_len[STAI_NETWORK_OUT_NUM] = {0};
+
   NeuralNetwork_init(&nn_in_len, nn_out, &number_output, nn_out_len);
 
   /*** Post Processing Init ***************************************************/
-  app_postprocess_init(&pp_params, &NN_Instance_Default);
+  stai_network_info info;
+  int ret;
+
+  ret = stai_network_get_info(network_context, &info);
+  assert(ret == STAI_SUCCESS);
+  app_postprocess_init(&pp_params, &info);
 
   /*** Camera Init ************************************************************/
   CameraPipeline_Init((uint32_t *[2]) {&lcd_bg_area.XSize, &lcd_fg_area.XSize}, (uint32_t *[2]) {&lcd_bg_area.YSize, &lcd_fg_area.YSize}, &pitch_nn);
@@ -171,7 +205,7 @@ int main(void)
   {
     CameraPipeline_IspUpdate();
 
-    if (pitch_nn != (NN_WIDTH * NN_BPP))
+    if (pitch_nn != (STAI_NETWORK_IN_1_WIDTH * STAI_NETWORK_IN_1_CHANNEL))
     {
       /* Start NN camera single capture Snapshot */
       CameraPipeline_NNPipe_Start(dcmipp_out_nn, CMW_MODE_SNAPSHOT);
@@ -187,7 +221,7 @@ int main(void)
 
     uint32_t ts[2] = { 0 };
 
-    if (pitch_nn != (NN_WIDTH * NN_BPP))
+    if (pitch_nn != (STAI_NETWORK_IN_1_WIDTH * STAI_NETWORK_IN_1_CHANNEL))
     {
       SCB_InvalidateDCache_by_Addr(dcmipp_out_nn, sizeof(dcmipp_out_nn));
     /*
@@ -195,13 +229,13 @@ int main(void)
      * The DCMIPP hardware requires the output image dimensions to be multiples of 16.
      * This ensures compatibility with the NN input dimensions.
      */
-      img_crop(dcmipp_out_nn, nn_in, pitch_nn, NN_WIDTH, NN_HEIGHT, NN_BPP);
+      img_crop(dcmipp_out_nn, nn_in, pitch_nn, STAI_NETWORK_IN_1_WIDTH, STAI_NETWORK_IN_1_HEIGHT, STAI_NETWORK_IN_1_CHANNEL);
       SCB_CleanInvalidateDCache_by_Addr(nn_in, nn_in_len);
     }
 
     ts[0] = HAL_GetTick();
     /* run ATON inference */
-    Run_Inference();
+    Run_Inference(network_context);
     ts[1] = HAL_GetTick();
 
     int32_t ret = app_postprocess_run((void **) nn_out, number_output, &pp_output, &pp_params);
@@ -211,7 +245,7 @@ int main(void)
     /* Discard nn_out region (used by pp_input and pp_outputs variables) to avoid Dcache evictions during nn inference */
     for (int i = 0; i < number_output; i++)
     {
-      float32_t *tmp = nn_out[i];
+      void *tmp = nn_out[i];
       SCB_InvalidateDCache_by_Addr(tmp, nn_out_len[i]);
     }
   }
@@ -239,6 +273,8 @@ static void Hardware_init(void)
 
   SystemClock_Config();
 
+  CONSOLE_Config();
+
   NPURam_enable();
 
   Fuse_Programming();
@@ -260,49 +296,48 @@ static void Hardware_init(void)
 
 }
 
-static void Run_Inference(void) {
-  LL_ATON_RT_RetValues_t ll_aton_rt_ret;
+static void Run_Inference(stai_network *network_instance) {
+  stai_return_code ret;
 
-  do
-  {
-    ll_aton_rt_ret = LL_ATON_RT_RunEpochBlock(&NN_Instance_Default);
-
-    /* Wait for next event */
-    if (ll_aton_rt_ret == LL_ATON_RT_WFE)
-    {
+  do {
+    ret = stai_network_run(network_instance, STAI_MODE_ASYNC);
+    if (ret == STAI_RUNNING_WFE)
       LL_ATON_OSAL_WFE();
-    }
-  } while (ll_aton_rt_ret != LL_ATON_RT_DONE);
+  } while (ret == STAI_RUNNING_WFE || ret == STAI_RUNNING_NO_WFE);
 
-  LL_ATON_RT_Reset_Network(&NN_Instance_Default);
+  ret = stai_ext_network_new_inference(network_instance);
+  assert(ret == STAI_SUCCESS);
 }
 
-static void NeuralNetwork_init(uint32_t *nnin_length, float32_t *nn_out[], int *number_output, int32_t nn_out_len[])
+static void NeuralNetwork_init(uint32_t *nn_in_length, stai_ptr *nn_out, stai_size *number_output, int32_t nn_out_len[])
 {
-  const LL_Buffer_InfoTypeDef *nn_in_info = LL_ATON_Input_Buffers_Info(&NN_Instance_Default);
-  const LL_Buffer_InfoTypeDef *nn_out_info = LL_ATON_Output_Buffers_Info(&NN_Instance_Default);
+  stai_network_info info;
+  int ret;
 
-  // Get the input buffer address
-  nn_in = (uint8_t *) LL_Buffer_addr_start(&nn_in_info[0]);
+  /* initialize runtime */
+  ret = stai_runtime_init();
+  assert(ret == STAI_SUCCESS);
+  /* init model instance */
+  ret = stai_network_init(network_context);
+  assert(ret == STAI_SUCCESS);
 
-  /* Count number of outputs */
-  while (nn_out_info[*number_output].name != NULL)
-  {
-    (*number_output)++;
-  }
-  assert(*number_output <= MAX_NUMBER_OUTPUT);
+  ret = stai_network_get_info(network_context, &info);
+  assert(ret == STAI_SUCCESS);
+  assert(info.n_inputs == 1);
+  *number_output = STAI_NETWORK_OUT_NUM;
 
+  /* Get the input buffer size & address */
+  *nn_in_length = info.inputs[0].size_bytes;
+  ret = stai_network_get_inputs(network_context, &nn_in, (stai_size *)&info.n_inputs);
+  assert(ret == STAI_SUCCESS);
+
+  /* Get the output buffers size & address */
+  ret = stai_network_get_outputs(network_context, nn_out, number_output);
+  assert(ret == STAI_SUCCESS);
   for (int i = 0; i < *number_output; i++)
   {
-    // Get the output buffers address
-    nn_out[i] = (float32_t *) LL_Buffer_addr_start(&nn_out_info[i]);
-    nn_out_len[i] = LL_Buffer_len(&nn_out_info[i]);
+    nn_out_len[i] = info.outputs[i].size_bytes;
   }
-
-  *nnin_length = LL_Buffer_len(&nn_in_info[0]);
-
-  LL_ATON_RT_RuntimeInit();
-  LL_ATON_RT_Init_Network(&NN_Instance_Default);
 }
 
 static void NPURam_enable(void)
@@ -354,8 +389,6 @@ static void set_clk_sleep_mode(void)
 
 static void NPUCache_config(void)
 {
-
-  npu_cache_init();
   npu_cache_enable();
 }
 
@@ -557,7 +590,7 @@ static void Display_WelcomeScreen(void)
 
     /* Display welcome message */
     UTIL_LCD_SetBackColor(0x40000000);
-    UTIL_LCDEx_PrintfAt(0, LINE(15), CENTER_MODE, "Pose estimation");
+    UTIL_LCDEx_PrintfAt(0, LINE(15), CENTER_MODE, "Pose Estimation");
     UTIL_LCDEx_PrintfAt(0, LINE(16), CENTER_MODE, WELCOME_MSG_1);
     UTIL_LCDEx_PrintfAt(0, LINE(17), CENTER_MODE, WELCOME_MSG_2[0]);
     UTIL_LCDEx_PrintfAt(0, LINE(18), CENTER_MODE, WELCOME_MSG_2[1]);
@@ -703,7 +736,51 @@ static void SystemClock_Config(void)
   }
 }
 
-void HAL_CACHEAXI_MspInit(CACHEAXI_HandleTypeDef *hcacheaxi)
+static void CONSOLE_Config()
+{
+  GPIO_InitTypeDef gpio_init;
+
+  __HAL_RCC_USART1_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+
+ /* DISCO & NUCLEO USART1 (PE5/PE6) */
+  gpio_init.Mode      = GPIO_MODE_AF_PP;
+  gpio_init.Pull      = GPIO_PULLUP;
+  gpio_init.Speed     = GPIO_SPEED_FREQ_HIGH;
+  gpio_init.Pin       = GPIO_PIN_5 | GPIO_PIN_6;
+  gpio_init.Alternate = GPIO_AF7_USART1;
+  HAL_GPIO_Init(GPIOE, &gpio_init);
+
+  huart1.Instance          = USART1;
+  huart1.Init.BaudRate     = 115200;
+  huart1.Init.Mode         = UART_MODE_TX_RX;
+  huart1.Init.Parity       = UART_PARITY_NONE;
+  huart1.Init.WordLength   = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits     = UART_STOPBITS_1;
+  huart1.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_8;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    while (1);
+  }
+}
+
+int _write(int file, char *ptr, int len)
+{
+  HAL_StatusTypeDef status;
+
+  if ((file != STDOUT_FILENO) && (file != STDERR_FILENO)) {
+      errno = EBADF;
+      return -1;
+  }
+
+  status = HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, ~0);
+
+  return (status == HAL_OK ? len : 0);
+}
+
+
+void npu_cache_enable_clocks_and_reset(void)
 {
   __HAL_RCC_CACHEAXIRAM_MEM_CLK_ENABLE();
   __HAL_RCC_CACHEAXI_CLK_ENABLE();
@@ -711,7 +788,7 @@ void HAL_CACHEAXI_MspInit(CACHEAXI_HandleTypeDef *hcacheaxi)
   __HAL_RCC_CACHEAXI_RELEASE_RESET();
 }
 
-void HAL_CACHEAXI_MspDeInit(CACHEAXI_HandleTypeDef *hcacheaxi)
+void npu_cache_disable_clocks_and_reset(void)
 {
   __HAL_RCC_CACHEAXIRAM_MEM_CLK_DISABLE();
   __HAL_RCC_CACHEAXI_CLK_DISABLE();

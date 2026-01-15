@@ -7,9 +7,9 @@
 4. Connect board
 5. From "Erasing & programming" tab select the `Binary/ai_fsbl.hex` file
 6. Wait for flashing
-7. From "Erasing & programming" tab select the `Binary/<board_name>_network_data.hex` file
+7. From "Erasing & programming" tab select the `Model/<board_name>/network_data.hex` file
 8. Wait for flashing
-9. From "Erasing & programming" tab select the `Binary/<board_name>_GettingStarted_PoseEstimation.hex` file
+9. From "Erasing & programming" tab select the `Binary/<board_name>/<board_name>_GettingStarted_PoseEstimation.hex` file
 10. Wait for flashing
 11. Set your board in boot from flash mode
 12. Power cycle the board

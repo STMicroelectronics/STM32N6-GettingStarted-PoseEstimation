@@ -19,6 +19,7 @@
 #ifndef APP_CONFIG
 #define APP_CONFIG
 
+#include "stai_network.h"
 #include "arm_math.h"
 #include "stm32_lcd.h"
 
@@ -35,17 +36,13 @@
 /* Model Related Info */
 #define POSTPROCESS_TYPE    POSTPROCESS_SPE_MOVENET_UI
 
-#define NN_WIDTH      (192)
-#define NN_HEIGHT     (192)
-#define NN_BPP 3
-
 #define COLOR_BGR (0)
 #define COLOR_RGB (1)
 #define COLOR_MODE    COLOR_RGB
 
 /* I/O configuration */
-#define AI_SPE_MOVENET_POSTPROC_HEATMAP_WIDTH        (NN_WIDTH/4)
-#define AI_SPE_MOVENET_POSTPROC_HEATMAP_HEIGHT       (NN_HEIGHT/4)
+#define AI_SPE_MOVENET_POSTPROC_HEATMAP_WIDTH        (STAI_NETWORK_IN_1_WIDTH/4)
+#define AI_SPE_MOVENET_POSTPROC_HEATMAP_HEIGHT       (STAI_NETWORK_IN_1_HEIGHT/4)
 
 /* Post processing values */
 #define AI_POSE_PP_CONF_THRESHOLD           (0.5f)

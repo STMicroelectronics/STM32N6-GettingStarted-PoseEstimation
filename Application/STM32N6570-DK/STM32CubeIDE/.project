@@ -61,6 +61,11 @@
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Src/app_fuseprogramming.c</locationURI>
 		</link>
+    <link>
+      <name>Application/app_postprocess_fd_blazeface_ui.c</name>
+      <type>1</type>
+      <locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_fd_blazeface_ui.c</locationURI>
+    </link>
 		<link>
 			<name>Application/app_postprocess_iseg_yolo_v8_ui.c</name>
 			<type>1</type>
@@ -102,9 +107,9 @@
 			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_od_yolov8_ui.c</locationURI>
 		</link>
 		<link>
-			<name>Application/app_postprocess_od_fd_blazeface_ui.c</name>
+			<name>Application/app_postprocess_od_blazeface_ui.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_od_fd_blazeface_ui.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/ai-postprocessing-wrapper/app_postprocess_od_blazeface_ui.c</locationURI>
 		</link>
 		<link>
 			<name>Application/app_postprocess_spe_movenet_ui.c</name>
@@ -129,7 +134,7 @@
 		<link>
 			<name>Application/mcu_cache.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/AI_Runtime/Npu/Devices/STM32N6XX/mcu_cache.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/Devices/STM32N6xx/mcu_cache.c</locationURI>
 		</link>
 		<link>
 			<name>Application/network.c</name>
@@ -137,9 +142,14 @@
 			<locationURI>PARENT-3-PROJECT_LOC/Model/STM32N6570-DK/network.c</locationURI>
 		</link>
 		<link>
+			<name>Application/stai_network.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Model/STM32N6570-DK/stai_network.c</locationURI>
+		</link>
+		<link>
 			<name>Application/npu_cache.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/AI_Runtime/Npu/Devices/STM32N6XX/npu_cache.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/Devices/STM32N6xx/npu_cache.c</locationURI>
 		</link>
 		<link>
 			<name>Application/stm32_lcd_ex.c</name>
@@ -157,79 +167,84 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Src/syscalls.c</locationURI>
 		</link>
 		<link>
-			<name>lib_vision_models_pp/vision_models_pp.c</name>
+			<name>stm32-vision-models-postprocessing/vision_models_pp.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/vision_models_pp.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-vision-models-postprocessing/lib_vision_models_pp/Src/vision_models_pp.c</locationURI>
 		</link>
 		<link>
-			<name>lib_vision_models_pp/mpe_pp_yolov8.c</name>
+			<name>stm32-vision-models-postprocessing/mpe_pp_yolov8.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/mpe_pp_yolov8.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-vision-models-postprocessing/lib_vision_models_pp/Src/mpe_pp_yolov8.c</locationURI>
 		</link>
 		<link>
-			<name>lib_vision_models_pp/vision_models_pp_maxi_if32.c</name>
+			<name>stm32-vision-models-postprocessing/vision_models_pp_maxi_if32.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/vision_models_pp_maxi_if32.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-vision-models-postprocessing/lib_vision_models_pp/Src/vision_models_pp_maxi_if32.c</locationURI>
 		</link>
 		<link>
-			<name>lib_vision_models_pp/vision_models_pp_maxi_is8.c</name>
+			<name>stm32-vision-models-postprocessing/vision_models_pp_maxi_is8.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/vision_models_pp_maxi_is8.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-vision-models-postprocessing/lib_vision_models_pp/Src/vision_models_pp_maxi_is8.c</locationURI>
 		</link>
 		<link>
-			<name>lib_vision_models_pp/vision_models_pp_maxi_iu8.c</name>
+			<name>stm32-vision-models-postprocessing/vision_models_pp_maxi_iu8.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/vision_models_pp_maxi_iu8.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-vision-models-postprocessing/lib_vision_models_pp/Src/vision_models_pp_maxi_iu8.c</locationURI>
 		</link>
 		<link>
-			<name>lib_vision_models_pp/spe_movenet_pp.c</name>
+			<name>stm32-vision-models-postprocessing/spe_movenet_pp.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/spe_movenet_pp.c</locationURI>
-		</link>
-		<link>
-			<name>lib_vision_models_pp/od_pp_fd_blazeface.c</name>
-			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/lib_vision_models_pp/lib_vision_models_pp/Src/od_pp_fd_blazeface.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-vision-models-postprocessing/lib_vision_models_pp/Src/spe_movenet_pp.c</locationURI>
 		</link>
 		<link>
 			<name>ll_aton/ll_aton.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/AI_Runtime/Npu/ll_aton/ll_aton.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/ll_aton/ll_aton.c</locationURI>
 		</link>
 		<link>
 			<name>ll_aton/ll_aton_lib.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/AI_Runtime/Npu/ll_aton/ll_aton_lib.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/ll_aton/ll_aton_lib.c</locationURI>
 		</link>
 		<link>
 			<name>ll_aton/ll_aton_lib_sw_operators.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/AI_Runtime/Npu/ll_aton/ll_aton_lib_sw_operators.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/ll_aton/ll_aton_lib_sw_operators.c</locationURI>
 		</link>
 		<link>
 			<name>ll_aton/ll_aton_rt_main.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/AI_Runtime/Npu/ll_aton/ll_aton_rt_main.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/ll_aton/ll_aton_rt_main.c</locationURI>
 		</link>
 		<link>
 			<name>ll_aton/ll_aton_runtime.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/AI_Runtime/Npu/ll_aton/ll_aton_runtime.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/ll_aton/ll_aton_runtime.c</locationURI>
+		</link>
+		<link>
+			<name>ll_aton/ll_aton_cipher.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/ll_aton/ll_aton_cipher.c</locationURI>
+		</link>
+		<link>
+			<name>ll_aton/ll_aton_stai_internal.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/ll_aton/ll_aton_stai_internal.c</locationURI>
 		</link>
 		<link>
 			<name>ll_aton/ll_aton_util.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/AI_Runtime/Npu/ll_aton/ll_aton_util.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/ll_aton/ll_aton_util.c</locationURI>
 		</link>
 		<link>
 			<name>ll_aton/ll_sw_float.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/AI_Runtime/Npu/ll_aton/ll_sw_float.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/ll_aton/ll_sw_float.c</locationURI>
 		</link>
 		<link>
 			<name>ll_aton/ll_sw_integer.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/AI_Runtime/Npu/ll_aton/ll_sw_integer.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stedgeai-lib/Npu/ll_aton/ll_sw_integer.c</locationURI>
 		</link>
 		<link>
 			<name>Drivers/CMSIS/system_stm32n6xx_fsbl.c</name>
@@ -322,44 +337,59 @@
 			<locationURI>PARENT-3-PROJECT_LOC/STM32Cube_FW_N6/Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal_rif.c</locationURI>
 		</link>
 		<link>
+			<name>Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal_uart.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/STM32Cube_FW_N6/Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal_uart.c</locationURI>
+		</link>
+		<link>
 			<name>Drivers/STM32N6xx_HAL_Driver/stm32n6xx_hal_xspi.c</name>
 			<type>1</type>
 			<locationURI>PARENT-3-PROJECT_LOC/STM32Cube_FW_N6/Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal_xspi.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/Camera_Middleware/cmw_camera.c</name>
+			<name>Middlewares/stm32-mw-camera/cmw_camera.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/cmw_camera.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/cmw_camera.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/Camera_Middleware/cmw_utils.c</name>
+			<name>Middlewares/stm32-mw-camera/cmw_utils.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/cmw_utils.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/cmw_utils.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/ISP_Library/isp_algo.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/ISP_Library/isp/Src/isp_algo.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/ISP_Library/isp/Src/isp_algo.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ISP_Library/isp_awb_algo.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/ISP_Library/isp/Src/isp_awb_algo.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/ISP_Library/isp_ae_algo.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/ISP_Library/isp/Src/isp_ae_algo.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/ISP_Library/isp_cmd_parser.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/ISP_Library/isp/Src/isp_cmd_parser.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/ISP_Library/isp/Src/isp_cmd_parser.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/ISP_Library/isp_core.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/ISP_Library/isp/Src/isp_core.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/ISP_Library/isp/Src/isp_core.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/ISP_Library/isp_services.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/ISP_Library/isp/Src/isp_services.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/ISP_Library/isp/Src/isp_services.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/ISP_Library/isp_tool_com.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/ISP_Library/isp/Src/isp_tool_com.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/ISP_Library/isp/Src/isp_tool_com.c</locationURI>
 		</link>
 		<link>
 			<name>Utilities/lcd/stm32_lcd.c</name>
@@ -397,39 +427,64 @@
 			<locationURI>PARENT-3-PROJECT_LOC/STM32Cube_FW_N6/Drivers/BSP/STM32N6570-DK/stm32n6570_discovery_xspi.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/Camera_Middleware/sensors/cmw_imx335.c</name>
+			<name>Middlewares/stm32-mw-camera/sensors/cmw_imx335.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/sensors/cmw_imx335.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/cmw_imx335.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/Camera_Middleware/sensors/cmw_vd55g1.c</name>
+			<name>Middlewares/stm32-mw-camera/sensors/cmw_vd1943.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/sensors/cmw_vd55g1.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/cmw_vd1943.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/Camera_Middleware/sensors/cmw_vd66gy.c</name>
+			<name>Middlewares/stm32-mw-camera/sensors/cmw_ov5640.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/sensors/cmw_vd66gy.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/cmw_ov5640.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/Camera_Middleware/sensors/drivers/imx335.c</name>
+			<name>Middlewares/stm32-mw-camera/sensors/cmw_vd55g1.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/sensors/imx335/imx335.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/cmw_vd55g1.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/Camera_Middleware/sensors/drivers/imx335_reg.c</name>
+			<name>Middlewares/stm32-mw-camera/sensors/cmw_vd66gy.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/sensors/imx335/imx335_reg.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/cmw_vd66gy.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/Camera_Middleware/sensors/drivers/vd55g1.c</name>
+			<name>Middlewares/stm32-mw-camera/sensors/drivers/imx335.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/sensors/vd55g1/vd55g1.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/imx335/imx335.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/Camera_Middleware/sensors/drivers/vd6g.c</name>
+			<name>Middlewares/stm32-mw-camera/sensors/drivers/imx335_reg.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/Camera_Middleware/sensors/vd6g/vd6g.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/imx335/imx335_reg.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/stm32-mw-camera/sensors/drivers/vd55g1.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/vd55g1/vd55g1.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/stm32-mw-camera/sensors/drivers/vd6g.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/vd6g/vd6g.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/stm32-mw-camera/sensors/drivers/vd1943.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/vd1943/vd1943.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/stm32-mw-camera/sensors/drivers/ov5640.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/ov5640/ov5640.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/stm32-mw-camera/sensors/drivers/ov5640_reg.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Middlewares/stm32-mw-camera/sensors/ov5640/ov5640_reg.c</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

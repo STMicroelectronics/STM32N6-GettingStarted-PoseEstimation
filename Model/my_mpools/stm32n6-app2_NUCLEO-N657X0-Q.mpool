@@ -37,8 +37,8 @@
 				"name":  "cpuRAM2",
 				"fformat": "FORMAT_RAW",
 				"prop":	  { "rights": "ACC_WRITE", "throughput": "MID",  "latency": "MID", "byteWidth": 8, "freqRatio": 2.50, "read_power": 17.324, "write_power": 15.321 },
-				"offset": { "value": "0x34100000", "magnitude":  "BYTES" },
-				"size":   { "value": "1024",       "magnitude": "KBYTES" }
+				"offset": { "value": "0x3419c000", "magnitude":  "BYTES" },
+				"size":   { "value": "400",       "magnitude": "KBYTES" }
 			},
 			{
 				"fname": "AXISRAM3",
