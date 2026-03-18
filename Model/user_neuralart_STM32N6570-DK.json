@@ -4,7 +4,7 @@
     "Profiles": {
         "default": {
             "memory_pool": "./my_mpools/stm32n6-app2_STM32N6570-DK.mpool",
-            "options" : "--all-buffers-info --cache-maintenance --Ocache-opt --Os"
+            "options" : "--all-buffers-info --cache-maintenance --Ocache-opt --Os --enable-virtual-mem-pools"
         }
     }
 }

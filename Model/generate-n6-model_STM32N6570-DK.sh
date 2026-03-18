@@ -2,7 +2,7 @@
 
 set -eu # Exit on any error, Exit on unset variable
 
-stedgeai generate --model st_movenet_lightning_a100_heatmaps_256_int8.tflite --target stm32n6 --st-neural-art default@user_neuralart_STM32N6570-DK.json --input-data-type uint8 --output-data-type int8
+stedgeai generate --model st_movenet_lightning_a100_heatmaps_256_int8.tflite --target stm32n6 --st-neural-art default@user_neuralart_STM32N6570-DK.json --input-data-type uint8 --output-data-type int8 --optimization time
 
 cp st_ai_output/network.c STM32N6570-DK/
 cp st_ai_output/network_ecblobs.h STM32N6570-DK/
