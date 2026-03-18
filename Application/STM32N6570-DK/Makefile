@@ -266,7 +266,7 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	$(BIN) $< $@
 
 $(BUILD_DIR)/$(TARGET)_sign.bin: $(BUILD_DIR)/$(TARGET).bin
-	$(SIGNER) -s -bin $< -nk -t ssbl -hv 2.3 -o $(BUILD_DIR)/$(TARGET)_sign.bin
+	$(SIGNER) -s -bin $< -nk -t ssbl -hv 2.3 -align -o $(BUILD_DIR)/$(TARGET)_sign.bin
 
 $(BUILD_DIR)/$(TARGET)_sign.hex: $(BUILD_DIR)/$(TARGET)_sign.bin
 	$(CP) -I binary $< --change-addresses 0x70100000 -O ihex $@
