@@ -64,6 +64,20 @@ typedef struct
   uint32_t YSize;
 } Rectangle_TypeDef;
 
+typedef struct
+{
+  int8_t raw_min;
+  int8_t raw_max;
+  float32_t raw_min_dequant;
+  float32_t raw_max_dequant;
+  float32_t max_keypoint_proba;
+  uint32_t visible_keypoints;
+  uint32_t output_width;
+  uint32_t output_height;
+  uint32_t output_channels;
+  int32_t postprocess_status;
+} PoseDebugMetrics_TypeDef;
+
 /* Lcd Background area */
 Rectangle_TypeDef lcd_bg_area = {
 #if ASPECT_RATIO_MODE == ASPECT_RATIO_CROP || ASPECT_RATIO_MODE == ASPECT_RATIO_FIT
@@ -125,6 +139,7 @@ __attribute__ ((section (".psram_bss")))
 __attribute__ ((aligned (32)))
 static uint8_t lcd_fg_buffer[2][LCD_FG_WIDTH * LCD_FG_HEIGHT * 2];
 static int lcd_fg_buffer_rd_idx;
+static PoseDebugMetrics_TypeDef pose_debug_metrics;
 
 static void SystemClock_Config(void);
 static void CONSOLE_Config(void);
@@ -139,6 +154,7 @@ static void Display_WelcomeScreen(void);
 static void Hardware_init(void);
 static void Run_Inference(stai_network *network_instance);
 static void NeuralNetwork_init(uint32_t *nn_in_length, stai_ptr *nn_out, stai_size *number_output, int32_t nn_out_len[]);
+static void Update_PoseDebugMetrics(stai_ptr *nn_out, int32_t nn_out_len[], stai_size number_output, spe_pp_out_t *p_postprocess);
 
 
 /**
@@ -229,16 +245,16 @@ int main(void)
     Run_Inference(network_context);
     ts[1] = HAL_GetTick();
 
-    int32_t ret = app_postprocess_run((void **) nn_out, number_output, &pp_output, &pp_params);
-    assert(ret == 0);
-
-    Display_NetworkOutput(&pp_output, ts[1] - ts[0]);
-    /* Discard nn_out region (used by pp_input and pp_outputs variables) to avoid Dcache evictions during nn inference */
     for (int i = 0; i < number_output; i++)
     {
-      void *tmp = nn_out[i];
-      SCB_InvalidateDCache_by_Addr(tmp, nn_out_len[i]);
+      SCB_InvalidateDCache_by_Addr(nn_out[i], nn_out_len[i]);
     }
+
+    int32_t ret = app_postprocess_run((void **) nn_out, number_output, &pp_output, &pp_params);
+    pose_debug_metrics.postprocess_status = ret;
+    Update_PoseDebugMetrics(nn_out, nn_out_len, number_output, &pp_output);
+
+    Display_NetworkOutput(&pp_output, ts[1] - ts[0]);
   }
 }
 
@@ -490,6 +506,20 @@ static void Display_NetworkOutput(void *p_postprocess, uint32_t inference_ms)
   Display_spe_Detection(roi);
 #endif
   UTIL_LCD_SetBackColor(0x40000000);
+  UTIL_LCDEx_PrintfAt(0, LINE(2), CENTER_MODE, "KP %lu/%u Max %.2f",
+                      pose_debug_metrics.visible_keypoints,
+                      (uint32_t)AI_POSE_PP_POSE_KEYPOINTS_NB,
+                      (double)pose_debug_metrics.max_keypoint_proba);
+  UTIL_LCDEx_PrintfAt(0, LINE(3), CENTER_MODE, "Raw[%d,%d] Deq[%.2f,%.2f]",
+                      pose_debug_metrics.raw_min,
+                      pose_debug_metrics.raw_max,
+                      (double)pose_debug_metrics.raw_min_dequant,
+                      (double)pose_debug_metrics.raw_max_dequant);
+  UTIL_LCDEx_PrintfAt(0, LINE(4), CENTER_MODE, "Out %lux%lux%lu PP %ld",
+                      pose_debug_metrics.output_width,
+                      pose_debug_metrics.output_height,
+                      pose_debug_metrics.output_channels,
+                      (long)pose_debug_metrics.postprocess_status);
   UTIL_LCDEx_PrintfAt(0, LINE(20), CENTER_MODE, "Inference: %ums", inference_ms);
   UTIL_LCD_SetBackColor(0);
 
@@ -499,6 +529,61 @@ static void Display_NetworkOutput(void *p_postprocess, uint32_t inference_ms)
   ret = HAL_LTDC_ReloadLayer(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING, LTDC_LAYER_2);
   assert(ret == HAL_OK);
   lcd_fg_buffer_rd_idx = 1 - lcd_fg_buffer_rd_idx;
+}
+
+static void Update_PoseDebugMetrics(stai_ptr *nn_out, int32_t nn_out_len[], stai_size number_output, spe_pp_out_t *p_postprocess)
+{
+  pose_debug_metrics.raw_min = 0;
+  pose_debug_metrics.raw_max = 0;
+  pose_debug_metrics.raw_min_dequant = 0.0f;
+  pose_debug_metrics.raw_max_dequant = 0.0f;
+  pose_debug_metrics.max_keypoint_proba = 0.0f;
+  pose_debug_metrics.visible_keypoints = 0;
+  pose_debug_metrics.output_width = STAI_NETWORK_OUT_1_WIDTH;
+  pose_debug_metrics.output_height = STAI_NETWORK_OUT_1_HEIGHT;
+  pose_debug_metrics.output_channels = STAI_NETWORK_OUT_1_CHANNEL;
+
+  if ((number_output > 0) && (nn_out[0] != NULL) && (nn_out_len[0] > 0))
+  {
+    int8_t *raw_output = (int8_t *)nn_out[0];
+    int32_t raw_len = nn_out_len[0];
+    int8_t raw_min = raw_output[0];
+    int8_t raw_max = raw_output[0];
+
+    for (int32_t i = 1; i < raw_len; i++)
+    {
+      if (raw_output[i] < raw_min)
+      {
+        raw_min = raw_output[i];
+      }
+      if (raw_output[i] > raw_max)
+      {
+        raw_max = raw_output[i];
+      }
+    }
+
+    pose_debug_metrics.raw_min = raw_min;
+    pose_debug_metrics.raw_max = raw_max;
+    pose_debug_metrics.raw_min_dequant = pp_params.raw_scale * (float32_t)((int32_t)raw_min - (int32_t)pp_params.raw_zero_point);
+    pose_debug_metrics.raw_max_dequant = pp_params.raw_scale * (float32_t)((int32_t)raw_max - (int32_t)pp_params.raw_zero_point);
+  }
+
+  if ((p_postprocess != NULL) && (p_postprocess->pOutBuff != NULL))
+  {
+    for (uint32_t i = 0; i < AI_POSE_PP_POSE_KEYPOINTS_NB; i++)
+    {
+      float32_t proba = p_postprocess->pOutBuff[i].proba;
+
+      if (proba > pose_debug_metrics.max_keypoint_proba)
+      {
+        pose_debug_metrics.max_keypoint_proba = proba;
+      }
+      if (proba >= AI_POSE_PP_CONF_THRESHOLD)
+      {
+        pose_debug_metrics.visible_keypoints++;
+      }
+    }
+  }
 }
 
 static void LCD_init(void)

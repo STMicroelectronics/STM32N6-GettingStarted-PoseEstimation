@@ -31,7 +31,7 @@
 #define ASPECT_RATIO_CROP       (1) /* Crop both pipes to nn input aspect ratio; Original aspect ratio kept */
 #define ASPECT_RATIO_FIT        (2) /* Resize both pipe to NN input aspect ratio; Original aspect ratio not kept */
 #define ASPECT_RATIO_FULLSCREEN (3) /* Resize camera image to NN input size and display a maximized image. See Doc/Build-Options.md#aspect-ratio-mode */
-#define ASPECT_RATIO_MODE ASPECT_RATIO_CROP
+#define ASPECT_RATIO_MODE ASPECT_RATIO_FIT
 
 /* Model Related Info */
 #define POSTPROCESS_TYPE    POSTPROCESS_SPE_MOVENET_UI
@@ -45,7 +45,7 @@
 #define AI_SPE_MOVENET_POSTPROC_HEATMAP_HEIGHT       (STAI_NETWORK_IN_1_HEIGHT/4)
 
 /* Post processing values */
-#define AI_POSE_PP_CONF_THRESHOLD           (0.5f)
+#define AI_POSE_PP_CONF_THRESHOLD           (0.005f)
 #define AI_POSE_PP_POSE_KEYPOINTS_NB        (17)
 
 #define USE_BINDINGS
