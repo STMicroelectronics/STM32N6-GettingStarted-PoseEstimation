@@ -46,31 +46,35 @@
 
 /* Post processing values */
 #define AI_POSE_PP_CONF_THRESHOLD           (0.5f)
-#define AI_POSE_PP_POSE_KEYPOINTS_NB        (13)
+#define AI_POSE_PP_POSE_KEYPOINTS_NB        (17)
 
 #define USE_BINDINGS
-#define BINDINGS_NB (14)
+#define BINDINGS_NB (18)
 #define BINDINGS const int bindings[BINDINGS_NB][3] = {\
-    { 11, 9, UTIL_LCD_COLOR_ORANGE },\
-    { 9, 7, UTIL_LCD_COLOR_ORANGE },\
-    { 12, 10, UTIL_LCD_COLOR_ORANGE },\
-    { 10, 8, UTIL_LCD_COLOR_ORANGE },\
-    { 7, 8, UTIL_LCD_COLOR_MAGENTA },\
-    { 1, 7, UTIL_LCD_COLOR_MAGENTA },\
-    { 2, 8, UTIL_LCD_COLOR_MAGENTA },\
+    { 15, 13, UTIL_LCD_COLOR_ORANGE },\
+    { 13, 11, UTIL_LCD_COLOR_ORANGE },\
+    { 16, 14, UTIL_LCD_COLOR_ORANGE },\
+    { 14, 12, UTIL_LCD_COLOR_ORANGE },\
+    { 11, 12, UTIL_LCD_COLOR_MAGENTA },\
+    { 5, 11, UTIL_LCD_COLOR_MAGENTA },\
+    { 6, 12, UTIL_LCD_COLOR_MAGENTA },\
+    { 5, 6, UTIL_LCD_COLOR_GREEN },\
+    { 5, 7, UTIL_LCD_COLOR_BLUE },\
+    { 7, 9, UTIL_LCD_COLOR_BLUE },\
+    { 6, 8, UTIL_LCD_COLOR_BLUE },\
+    { 8, 10, UTIL_LCD_COLOR_BLUE },\
     { 0, 1, UTIL_LCD_COLOR_GREEN },\
     { 0, 2, UTIL_LCD_COLOR_GREEN },\
-    { 1, 2, UTIL_LCD_COLOR_BLUE },\
     { 1, 3, UTIL_LCD_COLOR_BLUE },\
     { 2, 4, UTIL_LCD_COLOR_BLUE },\
-    { 3, 5, UTIL_LCD_COLOR_BLUE },\
-    { 4, 6, UTIL_LCD_COLOR_BLUE },\
+    { 0, 5, UTIL_LCD_COLOR_MAGENTA },\
+    { 0, 6, UTIL_LCD_COLOR_MAGENTA },\
 }\
 
 extern const int bindings[BINDINGS_NB][3];
 
 /* Display */
-#define WELCOME_MSG_1         "st_movenet_lightning_heatmaps_192_int8_pc.tflite"
+#define WELCOME_MSG_1         "st_movenet_lightning_a100_heatmaps_256_int8.tflite"
 #define WELCOME_MSG_2         "Model Running in STM32 MCU internal memory"
 
 #endif
