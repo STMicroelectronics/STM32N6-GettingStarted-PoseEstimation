@@ -19,10 +19,13 @@
 
 #include "app_postprocess.h"
 #include "app_config.h"
-#include <assert.h>
 
 #if POSTPROCESS_TYPE == POSTPROCESS_MPE_YOLO_V8_UF
+#include <assert.h>
+
+POSTPROCESS_WRAPPER_SECTION
 static mpe_pp_outBuffer_t out_detections[AI_MPE_YOLOV8_PP_TOTAL_BOXES];
+POSTPROCESS_WRAPPER_SECTION
 static mpe_pp_keyPoints_t out_keyPoints[AI_MPE_YOLOV8_PP_TOTAL_BOXES * AI_POSE_PP_POSE_KEYPOINTS_NB];
 
 int32_t app_postprocess_init(void *params_postprocess, stai_network_info *NN_Info)

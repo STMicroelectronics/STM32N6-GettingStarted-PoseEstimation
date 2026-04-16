@@ -19,10 +19,11 @@
 
 #include "app_postprocess.h"
 #include "app_config.h"
-#include <assert.h>
-
 
 #if POSTPROCESS_TYPE == POSTPROCESS_SPE_MOVENET_UI
+#include <assert.h>
+
+POSTPROCESS_WRAPPER_SECTION
 static spe_pp_outBuffer_t out_detections[AI_POSE_PP_POSE_KEYPOINTS_NB];
 
 int32_t app_postprocess_init(void *params_postprocess, stai_network_info *NN_Info)
@@ -30,6 +31,7 @@ int32_t app_postprocess_init(void *params_postprocess, stai_network_info *NN_Inf
   int32_t error = AI_SPE_POSTPROCESS_ERROR_NO;
   spe_movenet_pp_static_param_t *params = (spe_movenet_pp_static_param_t *) params_postprocess;
 
+  assert(NN_Info);
   params->raw_scale = NN_Info->outputs[0].scale.data[0];
   params->raw_zero_point = NN_Info->outputs[0].zeropoint.data[0];
   params->heatmap_width = AI_SPE_MOVENET_POSTPROC_HEATMAP_WIDTH;

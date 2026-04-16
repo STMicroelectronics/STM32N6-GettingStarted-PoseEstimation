@@ -20,18 +20,24 @@ float32_t vision_models_sigmoid_f(float32_t x)
 void vision_models_softmax_f(float32_t *input_x, float32_t *output_x, int32_t len_x, float32_t *tmp_x)
 {
   float32_t sum = 0;
-
+  float32_t max = input_x[0];
+  for (int32_t i = 1; i < len_x; ++i)
+  {
+    max = MAX(max, input_x[i]);
+  }
   for (int32_t i = 0; i < len_x; ++i)
   {
-    tmp_x[i] = expf(input_x[i]);
-    sum = sum + tmp_x[i];
+    tmp_x[i] = expf(input_x[i]-max);
+    sum += tmp_x[i];
   }
   sum = 1.0f / sum;
   for (int32_t i = 0; i < len_x; ++i)
   {
     tmp_x[i] *= sum;
   }
-  memcpy(output_x, tmp_x, len_x * sizeof(float32_t));
+  if (output_x != tmp_x) {
+    memcpy(output_x, tmp_x, len_x * sizeof(float32_t));
+  }
 }
 
 

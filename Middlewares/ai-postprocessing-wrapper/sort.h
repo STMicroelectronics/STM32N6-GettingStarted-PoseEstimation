@@ -28,8 +28,23 @@ static int compare_order_by_ascending_order(const void *el1, const void *el2)
   stai_network_info *NN_Info = NN_Info_current;
   size_t *idx1 = (size_t *) el1;
   size_t *idx2 = (size_t *) el2;
+  const stai_tensor *t1 = &NN_Info->outputs[*idx1];
+  const stai_tensor *t2 = &NN_Info->outputs[*idx2];
+  stai_size rank;
+  int diff;
 
-  return NN_Info->outputs[*idx1].size_bytes - NN_Info->outputs[*idx2].size_bytes;
+  diff = (int)t1->size_bytes - (int)t2->size_bytes;
+  if (diff != 0)
+    return diff;
+
+  /* Secondary sort: compare shape dimensions (height, width, channel) */
+  rank = t1->shape.size < t2->shape.size ? t1->shape.size : t2->shape.size;
+  for (stai_size i = 0; i < rank; i++) {
+    diff = (int)(t1->shape.data[i] - t2->shape.data[i]);
+    if (diff != 0)
+      return diff;
+  }
+  return (int)t1->shape.size - (int)t2->shape.size;
 }
 
 /* Function to sort model outputs based on their size in ascending order */

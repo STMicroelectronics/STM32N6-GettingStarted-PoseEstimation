@@ -12,6 +12,7 @@ _Min_Stack_Size = 0x4000; /* required amount of stack */
 MEMORY
 {
   AXISRAM1_S (xrw)      : ORIGIN = 0x34000400, LENGTH =  1023K
+  FLASH (xrw)           : ORIGIN = 0x71380000, LENGTH =  2M
   PSRAM (xrw)           : ORIGIN = 0x91000000, LENGTH =  16M
 }
 
@@ -147,6 +148,13 @@ SECTIONS
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
   } >AXISRAM1_S
+
+  .flash_section :
+  {
+     . = ALIGN(32);
+    *(.flash_blob)
+    . = ALIGN(32);
+  } >FLASH
 
   .psram_section (NOLOAD):
   {

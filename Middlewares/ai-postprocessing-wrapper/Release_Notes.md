@@ -7,6 +7,16 @@ It allows to simplify the usage of it in the use case of app using multiple type
 
 ## Update history
 
+### v1.1.0 / April 2026
+
+Add `POSTPROCESS_WRAPPER_SECTION` macro to allow placement of post-processing buffers in a user-defined memory section
+Automatic ordering of model outputs by size and shape to improve robustness against output index changes
+
+### v1.0.10 / January 2026
+
+Yolo-D object detection support
+New SSD object detection support
+
 ### v1.0.9 / January 2026
 
 Yunet face detection with keypoints support

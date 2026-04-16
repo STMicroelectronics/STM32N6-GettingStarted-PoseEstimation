@@ -12,6 +12,7 @@ _Min_Stack_Size = 0x4000; /* required amount of stack */
 MEMORY
 {
   AXISRAM1_S (xrw)      : ORIGIN = 0x34000400, LENGTH =  1647K
+  FLASH (xrw)           : ORIGIN = 0x71380000, LENGTH =  2M
 }
 
 /* Sections */
@@ -146,6 +147,13 @@ SECTIONS
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
   } >AXISRAM1_S
+
+  .flash_section :
+  {
+     . = ALIGN(32);
+    *(.flash_blob)
+    . = ALIGN(32);
+  } >FLASH
 
   /* Remove information from the compiler libraries */
   /DISCARD/ :

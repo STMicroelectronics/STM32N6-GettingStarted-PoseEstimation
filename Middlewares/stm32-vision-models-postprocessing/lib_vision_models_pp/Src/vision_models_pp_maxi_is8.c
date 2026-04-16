@@ -9,17 +9,73 @@
 
 #include "vision_models_pp.h"
 
-#include "stdio.h"
+/* return max value and it's index from an array */
+void vision_models_maxi_is8ou8(int8_t *arr, uint32_t len_arr, int8_t *maxim, uint8_t *index)
+{
+#ifdef VISION_MODELS_MAXI_IS8OU8_MVE
+
+  int8x16_t    s8x16_max_val = vdupq_n_s8(-128);
+  uint8x16_t   u8x16_max_idx = vdupq_n_u8(0);
+
+
+  uint8x16_t u8x16_idx = vidupq_n_u8(0,1);
+  int8_t *pSrc = arr;
+  int32_t iter = len_arr;
+  while(iter > 0)
+  {
+    mve_pred16_t p = vctp8q(iter);
+    // load up to 4 float32_t
+    int8x16_t s8x16_val = vldrbq_z_s8(pSrc, p);
+    pSrc+=16;
+    // Compare according to p to create p0
+    mve_pred16_t p0 = vcmpgtq_m_s8(s8x16_val, s8x16_max_val, p);
+
+    // according to p0: update with s8x16_val or keep s8x16_blk_minmax_val
+    s8x16_max_val = vpselq_s8(s8x16_val, s8x16_max_val, p0);
+    /* according to p0: store per-lane extrema indexes*/
+    u8x16_max_idx = vpselq_u8(u8x16_idx, u8x16_max_idx, p0);
+    u8x16_idx+=16;
+    iter-=16;
+
+  }
+  /*
+   * Get max value across the vector
+   */
+  *maxim = vmaxvq_s8(-128, s8x16_max_val);
+  /*
+   * set index for lower values to max possible index
+   */
+  mve_pred16_t p0 = vcmpgeq_n_s8(s8x16_max_val, *maxim);
+  uint8x16_t indexVec = vpselq_u8(u8x16_max_idx, vdupq_n_u8(len_arr), p0);
+  /*
+   * Get min index which is thus for a max value
+   */
+  *index = (int8_t)vminvq_u8(len_arr, indexVec);
+#else
+    *index = 0;
+    *maxim = arr[0];
+
+    for (uint8_t i = 1; i < len_arr; i++)
+    {
+      if (arr[i] > *maxim)
+      {
+        *maxim = arr[i];
+        *index = i;
+      }
+    }
+#endif
+}
+
 
 
 void vision_models_maxi_p_is8ou8(int8_t *arr, uint32_t len_arr, uint32_t offset, int8_t *maxim, uint8_t *index, uint32_t parallelize)
 {
 #ifdef VISION_MODELS_MAXI_P_IS8OU8_MVE
-  if (15*offset < UCHAR_MAX) {
+    parallelize = MIN(parallelize, 16);
+    if (15*offset < UCHAR_MAX) {
     int8x16_t   s8x16_max_val = vdupq_n_s8(SCHAR_MIN);
     uint8x16_t   u8x16_max_idx = vdupq_n_u8(0);
 
-    parallelize = MIN(parallelize, 16);
     mve_pred16_t p = vctp8q(parallelize);
 
     uint8x16_t u8x16_idx = vdupq_n_u8(0);
@@ -44,7 +100,7 @@ void vision_models_maxi_p_is8ou8(int8_t *arr, uint32_t len_arr, uint32_t offset,
     vstrbq_p_s8(maxim,s8x16_max_val,p);
   } else {
     uint16_t _tmpIdx[8];
-    uint16_t _parallelize = MIN(8,parallelize);
+    uint32_t _parallelize = MIN(8,parallelize);
     vision_models_maxi_p_is8ou16(arr,len_arr,offset,maxim,_tmpIdx,_parallelize);
     maxim+=_parallelize;
     for ( uint16_t i = 0; i < _parallelize; i++) {
@@ -60,37 +116,37 @@ void vision_models_maxi_p_is8ou8(int8_t *arr, uint32_t len_arr, uint32_t offset,
 #else
   parallelize = MIN(16, parallelize);
   if(parallelize*offset < UCHAR_MAX) {
-  for (uint8_t k = 0; k < parallelize; k++)
-    {
-      *index = 0;
-      *maxim = arr[k*offset];
-
-      for (uint8_t i = 1; i < len_arr; i++)
+    for (uint8_t k = 0; k < parallelize; k++)
       {
-        if (arr[k*offset+i] > *maxim)
+        *index = 0;
+        *maxim = arr[k*offset];
+
+        for (uint8_t i = 1; i < len_arr; i++)
         {
-          *maxim = arr[k*offset+i];
-          *index = i;
+          if (arr[k*offset+i] > *maxim)
+          {
+            *maxim = arr[k*offset+i];
+            *index = i;
+          }
         }
+        maxim++;
+        index++;
       }
-      maxim++;
-      index++;
+    } else {
+      uint16_t _tmpIdx[8];
+      uint16_t _parallelize = MIN(8,parallelize);
+      vision_models_maxi_p_is8ou16(arr,len_arr,offset,maxim,_tmpIdx,_parallelize);
+      maxim+=_parallelize;
+      for ( uint16_t i = 0; i <_parallelize; i++) {
+        *index++ = _tmpIdx[i];
+      }
+      parallelize-=_parallelize;
+      arr+=_parallelize*offset;
+      vision_models_maxi_p_is8ou16(arr,len_arr,offset,maxim,_tmpIdx,parallelize);
+      for ( int i = 0; i < parallelize; i++) {
+        *index++ = _tmpIdx[i];
+      }
     }
-  } else {
-    uint16_t _tmpIdx[8];
-    uint16_t _parallelize = MIN(8,parallelize);
-    vision_models_maxi_p_is8ou16(arr,len_arr,offset,maxim,_tmpIdx,_parallelize);
-    maxim+=_parallelize;
-    for ( uint16_t i = 0; i <_parallelize; i++) {
-      *index++ = _tmpIdx[i];
-    }
-    parallelize-=_parallelize;
-    arr+=_parallelize*offset;
-    vision_models_maxi_p_is8ou16(arr,len_arr,offset,maxim,_tmpIdx,parallelize);
-    for ( int i = 0; i < parallelize; i++) {
-      *index++ = _tmpIdx[i];
-    }
-  }
 
 #endif
 
@@ -151,7 +207,7 @@ void vision_models_maxi_p_is8ou16(int8_t *arr, uint32_t len_arr, uint32_t offset
 /* return max value and it's index from a transposed array */
 void vision_models_maxi_tr_p_is8ou8(int8_t *arr, uint32_t len_arr, uint32_t offset, int8_t *maxim, uint8_t *index, uint32_t parallelize)
 {
-  #ifdef VISION_MODELS_MAXI_TR_P_IS8OU8_MVE
+#ifdef VISION_MODELS_MAXI_TR_P_IS8OU8_MVE
   int8x16_t      s8x16_max_val = vdupq_n_s8(Q7_MIN);
   uint8x16_t     u8x16_max_idx = vdupq_n_u8(0);
   parallelize = MIN(parallelize, 16);

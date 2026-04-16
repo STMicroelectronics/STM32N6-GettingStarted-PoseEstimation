@@ -19,12 +19,17 @@
 
 #include "app_postprocess.h"
 #include "app_config.h"
-#include <assert.h>
 
 #if POSTPROCESS_TYPE == POSTPROCESS_MPE_YOLO_V8_UI
+#include <assert.h>
+
+POSTPROCESS_WRAPPER_SECTION
 static mpe_pp_outBuffer_t out_detections[AI_MPE_YOLOV8_PP_TOTAL_BOXES];
+POSTPROCESS_WRAPPER_SECTION
 static mpe_pp_keyPoints_t out_keyPoints[AI_MPE_YOLOV8_PP_TOTAL_BOXES * AI_POSE_PP_POSE_KEYPOINTS_NB];
+POSTPROCESS_WRAPPER_SECTION
 static mpe_pp_keyPoints_s8_t scratchBuffer_keyPoints[AI_MPE_YOLOV8_PP_TOTAL_BOXES * AI_POSE_PP_POSE_KEYPOINTS_NB];
+POSTPROCESS_WRAPPER_SECTION
 static mpe_pp_scratchBuffer_s8_t scratchBuffer_detections[AI_MPE_YOLOV8_PP_TOTAL_BOXES];
 
 int32_t app_postprocess_init(void *params_postprocess, stai_network_info *NN_Info)
@@ -32,6 +37,7 @@ int32_t app_postprocess_init(void *params_postprocess, stai_network_info *NN_Inf
   int32_t error = AI_MPE_PP_ERROR_NO;
   mpe_yolov8_pp_static_param_t *params = (mpe_yolov8_pp_static_param_t *) params_postprocess;
 
+  assert(NN_Info);
   params->raw_output_scale = NN_Info->outputs[0].scale.data[0];
   params->raw_output_zero_point = NN_Info->outputs[0].zeropoint.data[0];
   params->nb_classes = AI_MPE_YOLOV8_PP_NB_CLASSES;

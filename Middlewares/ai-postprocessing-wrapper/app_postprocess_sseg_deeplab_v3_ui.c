@@ -19,10 +19,11 @@
 
 #include "app_postprocess.h"
 #include "app_config.h"
-#include <assert.h>
-
 
 #if POSTPROCESS_TYPE == POSTPROCESS_SSEG_DEEPLAB_V3_UI
+#include <assert.h>
+
+POSTPROCESS_WRAPPER_SECTION
 static uint8_t out_sseg_map[AI_SSEG_DEEPLABV3_PP_WIDTH * AI_SSEG_DEEPLABV3_PP_HEIGHT];
 
 int32_t app_postprocess_init(void *params_postprocess, stai_network_info *NN_Info)

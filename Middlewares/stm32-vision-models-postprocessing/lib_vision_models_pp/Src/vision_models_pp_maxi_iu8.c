@@ -134,11 +134,11 @@ void vision_models_maxi_iu8ou16(uint8_t *arr, uint32_t len_arr, uint8_t *pMaxim,
 void vision_models_maxi_p_iu8ou8(uint8_t *arr, uint32_t len_arr, uint32_t offset, uint8_t *maxim, uint8_t *index, uint32_t parallelize)
 {
 #ifdef VISION_MODELS_MAXI_IU8OU8_MVE
+  parallelize = MIN(parallelize, 16);
   if (15*offset < UCHAR_MAX) {
     uint8x16_t   u8x16_max_val = vdupq_n_u8(0);
     uint8x16_t   u8x16_max_idx = vdupq_n_u8(0);
 
-    parallelize = MIN(parallelize, 16);
     mve_pred16_t p = vctp8q(parallelize);
 
     uint8x16_t u8x16_idx = vdupq_n_u8(0);

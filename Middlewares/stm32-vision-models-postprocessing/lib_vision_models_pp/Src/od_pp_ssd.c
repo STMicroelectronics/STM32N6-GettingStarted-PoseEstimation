@@ -134,89 +134,141 @@ static void SSD_quick_sort_core(float32_t *pScores,
  * int32_t ssd_pp_getNNBoxes
  *
 **/
-int32_t ssd_pp_getNNBoxes(od_ssd_pp_in_centroid_t *pInput,
-                          od_ssd_pp_static_param_t *pInput_static_param)
+/* Overwrite inputs */
+int32_t ssd_pp_getNNBoxes_in_place(od_ssd_pp_in_centroid_t *pInput,
+                                   od_ssd_pp_static_param_t *pInput_static_param)
 {
-  float32_t *pScores  = (float32_t *)pInput->pScores;
-  float32_t *pBoxes   = (float32_t *)pInput->pBoxes;
-  float32_t *pAnchors = (float32_t *)pInput->pAnchors;
+  float32_t *pScoresIn  = (float32_t *)pInput->pScores;
+  float32_t *pScoresOut  = (float32_t *)pInput->pScores;
+  float32_t *pBoxesIn   = (float32_t *)pInput->pBoxes;
+  float32_t *pBoxesOut   = (float32_t *)pInput->pBoxes;
+  float32_t *pAnchors = (float32_t *)pInput_static_param->pAnchors;
   uint32_t nb_detect = 0;
 
-  for (int32_t i = 0; i < pInput_static_param->nb_detections; i+=4)
+  for (int32_t i = 0; i < pInput_static_param->nb_detections; i++)
   {
-    float32_t best_score[4];
-    uint32_t class_index[4];
-      vision_models_maxi_p_if32ou32(&(pScores[i * pInput_static_param->nb_classes]),
-                     pInput_static_param->nb_classes,
-                     pInput_static_param->nb_classes,
-                     best_score,
-                     class_index,
-                     pInput_static_param->nb_detections-i);
-      for (int _i = 0; _i < MIN(4, pInput_static_param->nb_detections-i); _i++) {
+    // Max (removing first elements
+    float32_t best_score;
+    uint32_t class_index;
+    vision_models_maxi_if32ou32(pScoresIn + 1,
+                                pInput_static_param->nb_classes - 1,
+                                &best_score,
+                                &class_index);
+    int bSkip = 0;
+    float32_t max = MAX(best_score, pScoresIn[0]);
+    if (expf(best_score - max) < pInput_static_param->conf_threshold * ( expf(best_score - max) + expf(pScoresIn[0] - max)) ) {
+      bSkip = 1;
+    }
 
-        if (best_score[_i] >= pInput_static_param->conf_threshold)
-        {
-            for (int32_t k = 0; k < pInput_static_param->nb_classes; ++k)
-            {
-                pScores[nb_detect * pInput_static_param->nb_classes + k] = pScores[(i + _i) * pInput_static_param->nb_classes + k];
-            }
-            pBoxes[nb_detect * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_XCENTER]   = pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_XCENTER] / pInput_static_param->XY_scale * pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_WIDTHREL] +
-            pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_XCENTER];
-            pBoxes[nb_detect * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_YCENTER]   = pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_YCENTER] / pInput_static_param->XY_scale * pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_HEIGHTREL] +
-            pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_YCENTER];
-            pBoxes[nb_detect * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_WIDTHREL]  = expf(pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_WIDTHREL] / pInput_static_param->WH_scale) * pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_WIDTHREL];
-            pBoxes[nb_detect * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_HEIGHTREL] = expf(pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_HEIGHTREL] / pInput_static_param->WH_scale) * pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_HEIGHTREL];
+    if (bSkip == 0)
+    {
+      class_index += 1;
+      // Softmax
+      vision_models_softmax_f(pScoresIn, pScoresIn, pInput_static_param->nb_classes, pScoresIn);
+      best_score = pScoresIn[class_index];
 
-            nb_detect++;
-        }
+
+      if (best_score >= pInput_static_param->conf_threshold)
+      {
+          // Discard class 0 (background)
+          pScoresOut[0] = 0.0f;
+          for (int32_t k = 1; k < pInput_static_param->nb_classes; ++k)
+          {
+              pScoresOut[k] = pScoresIn[k];
+          }
+          pBoxesOut[AI_SSD_PP_CENTROID_XCENTER]   =
+                pBoxesIn[AI_SSD_PP_CENTROID_XCENTER] \
+                * pInput_static_param->XY_inv_scale \
+                * pAnchors[AI_SSD_PP_CENTROID_WIDTHREL] \
+                + pAnchors[AI_SSD_PP_CENTROID_XCENTER];
+          pBoxesOut[AI_SSD_PP_CENTROID_YCENTER]   =
+                pBoxesIn[AI_SSD_PP_CENTROID_YCENTER] \
+                * pInput_static_param->XY_inv_scale \
+                * pAnchors[AI_SSD_PP_CENTROID_HEIGHTREL] \
+                + pAnchors[AI_SSD_PP_CENTROID_YCENTER];
+          pBoxesOut[AI_SSD_PP_CENTROID_WIDTHREL]  = expf(pBoxesIn[AI_SSD_PP_CENTROID_WIDTHREL] \
+                                                    * pInput_static_param->WH_inv_scale) \
+                                                    * pAnchors[AI_SSD_PP_CENTROID_WIDTHREL];
+          pBoxesOut[AI_SSD_PP_CENTROID_HEIGHTREL] = expf(pBoxesIn[AI_SSD_PP_CENTROID_HEIGHTREL] \
+                                                    * pInput_static_param->WH_inv_scale) \
+                                                    * pAnchors[AI_SSD_PP_CENTROID_HEIGHTREL];
+
+          pBoxesOut  += AI_SSD_PP_BOX_STRIDE;
+          pScoresOut += pInput_static_param->nb_classes;
+          nb_detect++;
       }
+    }
+    pBoxesIn  += AI_SSD_PP_BOX_STRIDE;
+    pAnchors  += AI_SSD_PP_BOX_STRIDE;
+    pScoresIn += pInput_static_param->nb_classes;
   }
   pInput_static_param->nb_detect = nb_detect;
+
 
   return (AI_OD_POSTPROCESS_ERROR_NO);
 }
 
 int32_t ssd_pp_getNNBoxes_scratchBuffer(od_ssd_pp_in_centroid_t *pInput,
-                                        od_pp_outBuffer_t *pScratchBuffer,
-                                     od_ssd_pp_static_param_t *pInput_static_param)
+                                        od_pp_outBuffer_t *pScratchBufferIn,
+                                        od_ssd_pp_static_param_t *pInput_static_param)
 {
-  float32_t *pScores = (float32_t *)pInput->pScores;
-  float32_t *pBoxes = (float32_t *)pInput->pBoxes;
-  float32_t *pAnchors = (float32_t *)pInput->pAnchors;
+  float32_t * restrict pScoresIn = (float32_t *)pInput->pScores;
+  float32_t * restrict pBoxesIn = (float32_t *)pInput->pBoxes;
+  float32_t * restrict pAnchors = (float32_t *)pInput_static_param->pAnchors;
   uint32_t nb_detect = 0;
+  od_pp_outBuffer_t *pScratchBuffer = pScratchBufferIn;
 
-  float32_t inv_XY_scale = 1.0f / pInput_static_param->XY_scale;
-  float32_t inv_WH_scale = 1.0f / pInput_static_param->WH_scale;
 
-  for (int32_t i = 0; i < pInput_static_param->nb_detections; i+=4)
+  for (int32_t i = 0; i < pInput_static_param->nb_detections; i++)
   {
-    float32_t best_score[4];
-    uint32_t class_index[4];
-      vision_models_maxi_p_if32ou32(&(pScores[i * pInput_static_param->nb_classes]),
-                     pInput_static_param->nb_classes,
-                     pInput_static_param->nb_classes,
-                     best_score,
-                     class_index,
-                     pInput_static_param->nb_detections-i);
-      for (int _i = 0; _i < MIN(4, pInput_static_param->nb_detections-i); _i++) {
+    float32_t best_score;
+    uint32_t class_index;
+    vision_models_maxi_if32ou32(pScoresIn + 1,
+                                pInput_static_param->nb_classes-1,
+                                &best_score,
+                                &class_index);
+    int bSkip = 0;
+    float32_t max = MAX(best_score, pScoresIn[0]);
+    if (expf(best_score - max) < pInput_static_param->conf_threshold * ( expf(best_score - max) + expf(pScoresIn[0] - max))) {
+      bSkip = 1;
+    }
 
-        if (best_score[_i] >= pInput_static_param->conf_threshold)
-        {
-          pScratchBuffer[nb_detect].class_index = class_index[_i];
-          pScratchBuffer[nb_detect].conf = best_score[_i];
-          pScratchBuffer[nb_detect].x_center = pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_XCENTER] *inv_XY_scale * pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_WIDTHREL] +
-            pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_XCENTER];
-          pScratchBuffer[nb_detect].y_center = pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_YCENTER] * inv_XY_scale * pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_HEIGHTREL] +
-            pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_YCENTER];
-          pScratchBuffer[nb_detect].width = expf(pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_WIDTHREL] * inv_WH_scale) * pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_WIDTHREL];
-          pScratchBuffer[nb_detect].height =expf(pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_HEIGHTREL] *inv_WH_scale) * pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_HEIGHTREL];
+    if (bSkip == 0)
+    {
+      class_index+=1;
+      // Softmax
+      vision_models_softmax_f(pScoresIn, pScoresIn, pInput_static_param->nb_classes, pScoresIn);
+      best_score = pScoresIn[class_index];
 
+      if (best_score >= pInput_static_param->conf_threshold)
+      {
+        pScratchBuffer->class_index = class_index;
+        pScratchBuffer->conf = best_score;
+        pScratchBuffer->x_center = pBoxesIn[AI_SSD_PP_CENTROID_XCENTER] \
+                                  * pInput_static_param->XY_inv_scale \
+                                  * pAnchors[AI_SSD_PP_CENTROID_WIDTHREL] \
+                                  + pAnchors[AI_SSD_PP_CENTROID_XCENTER];
+        pScratchBuffer->y_center = pBoxesIn[AI_SSD_PP_CENTROID_YCENTER] \
+                                  * pInput_static_param->XY_inv_scale \
+                                  * pAnchors[AI_SSD_PP_CENTROID_HEIGHTREL] \
+                                  + pAnchors[AI_SSD_PP_CENTROID_YCENTER];
+        pScratchBuffer->width  = expf(pBoxesIn[AI_SSD_PP_CENTROID_WIDTHREL] \
+                                      * pInput_static_param->WH_inv_scale) \
+                                      * pAnchors[AI_SSD_PP_CENTROID_WIDTHREL];
+        pScratchBuffer->height = expf(pBoxesIn[AI_SSD_PP_CENTROID_HEIGHTREL] \
+                                      * pInput_static_param->WH_inv_scale) \
+                                      * pAnchors[AI_SSD_PP_CENTROID_HEIGHTREL];
 
-          nb_detect++;
-        }
-        pInput_static_param->nb_detect = nb_detect;
+        pScratchBuffer++;
+        nb_detect++;
       }
+    }
+    pBoxesIn  += AI_SSD_PP_BOX_STRIDE;
+    pAnchors  += AI_SSD_PP_BOX_STRIDE;
+    pScoresIn += pInput_static_param->nb_classes;
+
   }
+  pInput_static_param->nb_detect = nb_detect;
 
   return (AI_OD_POSTPROCESS_ERROR_NO);
 }
@@ -226,64 +278,80 @@ int32_t ssd_pp_getNNBoxes_int8_scratchBuffer(od_ssd_pp_in_centroid_t *pInput,
                                              od_pp_outBuffer_t *pScratchBuffer,
                                              od_ssd_pp_static_param_t *pInput_static_param)
 {
-  int8_t *pScores  = (int8_t *)pInput->pScores;
-  int8_t *pBoxes   = (int8_t *)pInput->pBoxes;
-  int8_t *pAnchors = (int8_t *)pInput->pAnchors;
+  int8_t *pScoresIn = (int8_t *)pInput->pScores;
+  int8_t *pBoxesIn  = (int8_t *)pInput->pBoxes;
+  float32_t *pAnchors  = (float32_t *)pInput_static_param->pAnchors;
   uint32_t nb_detect = 0;
 
   int8_t boxe_zp         = pInput_static_param->boxe_zero_point;
   float32_t boxe_scale   = pInput_static_param->boxe_scale;
 
-  int8_t anchor_zp       = pInput_static_param->anchor_zero_point;
-  float32_t anchor_scale = pInput_static_param->anchor_scale;
-
   int8_t score_zp        = pInput_static_param->score_zero_point;
   float32_t score_scale  = pInput_static_param->score_scale;
 
-  float32_t inv_XY_scale = 1.0f / pInput_static_param->XY_scale;
-  float32_t inv_WH_scale = 1.0f / pInput_static_param->WH_scale;
-
-  int8_t conf_threshold_s8 = (int8_t)(pInput_static_param->conf_threshold / score_scale + 0.5f) + score_zp;
-
-  for (int32_t i = 0; i < pInput_static_param->nb_detections; i+=16)
+  for (int32_t i = 0; i < pInput_static_param->nb_detections; i++)
   {
-    int8_t best_score[16];
-    uint8_t class_index[16];
-    vision_models_maxi_p_is8ou8(&(pScores[i * pInput_static_param->nb_classes]),
-                                pInput_static_param->nb_classes,
-                                pInput_static_param->nb_classes,
-                                best_score,
-                                class_index,
-                                pInput_static_param->nb_detections-i);
+    int8_t best_score_i8;
+    uint8_t class_index_u8;
+    float32_t best_score;
 
-    for (int _i = 0; _i < MIN(16, pInput_static_param->nb_detections-i); _i++)
-    {
-      if (best_score[_i] >= conf_threshold_s8)
+    // Max removing backrground
+    vision_models_maxi_is8ou8(pScoresIn+1,
+                              pInput_static_param->nb_classes-1,
+                              &best_score_i8,
+                              &class_index_u8);
+    // first rough check reduced softmax
+    // exp(x) / (exp(x) + exp(x0)) > threshold
+    int bSkip = 0;
+    int8_t max = MAX(best_score_i8, pScoresIn[0]);
+    if (expf((best_score_i8-max)*score_scale) < pInput_static_param->conf_threshold * ( expf((best_score_i8 - max)*score_scale) + expf((pScoresIn[0] - max)*score_scale))) {
+      bSkip = 1;
+    }
+
+    if (bSkip == 0) {
+      class_index_u8 += 1;
+      float32_t *pScratch_buffer_float = pInput_static_param->pScratchBufferSoftMax;
+      // Dequantize
+      for (int e = 0; e < pInput_static_param->nb_classes; e++) {
+        pScratch_buffer_float[e] = (float32_t)((int32_t)pScoresIn[e] - score_zp) * score_scale;
+      }
+      // Softmax
+      vision_models_softmax_f(pScratch_buffer_float, pScratch_buffer_float, pInput_static_param->nb_classes, pScratch_buffer_float);
+      best_score = pScratch_buffer_float[class_index_u8];
+
+      if (best_score >= pInput_static_param->conf_threshold)
       {
-        float32_t value, anchor_center, anchor_rel_x, anchor_rel_y, score;
-        score = (float32_t)((int32_t)best_score[_i] - score_zp) * score_scale;
-        pScratchBuffer[nb_detect].class_index = class_index[_i];
-        pScratchBuffer[nb_detect].conf = score;
+        float32_t value, anchor_rel_x, anchor_rel_y, anchor_size_w, anchor_size_h;
+        pScratchBuffer[nb_detect].class_index = class_index_u8;
+        pScratchBuffer[nb_detect].conf = best_score;
 
-        value         = (float32_t)((int32_t)  pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_XCENTER]   - boxe_zp )  * boxe_scale;
-        anchor_rel_x  = (float32_t)((int32_t)pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_WIDTHREL]  - anchor_zp) * anchor_scale;
-        anchor_center = (float32_t)((int32_t)pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_XCENTER]   - anchor_zp) * anchor_scale;
-        pScratchBuffer[nb_detect].x_center = value * inv_XY_scale * anchor_rel_x + anchor_center;
+        value         = (float32_t)((int32_t)  pBoxesIn[AI_SSD_PP_CENTROID_XCENTER]   - boxe_zp )  * boxe_scale;
+        anchor_rel_x  = (float32_t)pAnchors[AI_SSD_PP_CENTROID_XCENTER];
+        anchor_size_w = (float32_t)pAnchors[AI_SSD_PP_CENTROID_WIDTHREL];
+        pScratchBuffer[nb_detect].x_center =
+            value \
+            * pInput_static_param->XY_inv_scale \
+            * anchor_size_w \
+            + anchor_rel_x;
 
-        value         = (float32_t)((int32_t)  pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_YCENTER]   - boxe_zp )  * boxe_scale;
-        anchor_rel_y  = (float32_t)((int32_t)pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_HEIGHTREL] - anchor_zp) * anchor_scale;
-        anchor_center = (float32_t)((int32_t)pAnchors[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_YCENTER]   - anchor_zp) * anchor_scale;
-        pScratchBuffer[nb_detect].y_center = value * inv_XY_scale * anchor_rel_y + anchor_center;
+        value         = (float32_t)((int32_t)  pBoxesIn[AI_SSD_PP_CENTROID_YCENTER]   - boxe_zp )  * boxe_scale;
+        anchor_rel_y  = (float32_t)pAnchors[AI_SSD_PP_CENTROID_YCENTER];
+        anchor_size_h = (float32_t)pAnchors[AI_SSD_PP_CENTROID_HEIGHTREL];
+        pScratchBuffer[nb_detect].y_center = value * pInput_static_param->XY_inv_scale * anchor_size_h + anchor_rel_y;
 
-        value         = (float32_t)((int32_t)  pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_WIDTHREL]  - boxe_zp )  * boxe_scale;
-        pScratchBuffer[nb_detect].width  = expf(value * inv_WH_scale) * anchor_rel_x;
+        value         = (float32_t)((int32_t)  pBoxesIn[AI_SSD_PP_CENTROID_WIDTHREL]  - boxe_zp )  * boxe_scale;
+        pScratchBuffer[nb_detect].width  = expf(value * pInput_static_param->WH_inv_scale) * anchor_size_w;
 
-        value         = (float32_t)((int32_t)  pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_HEIGHTREL] - boxe_zp )  * boxe_scale;
-        pScratchBuffer[nb_detect].height = expf(value * inv_WH_scale) * anchor_rel_y;
+        value         = (float32_t)((int32_t)  pBoxesIn[AI_SSD_PP_CENTROID_HEIGHTREL] - boxe_zp )  * boxe_scale;
+        pScratchBuffer[nb_detect].height = expf(value * pInput_static_param->WH_inv_scale) * anchor_size_h;
 
         nb_detect++;
       } // if > thrshold
-    } // for _i (up to 16 elements)
+    }
+    pBoxesIn  += AI_SSD_PP_BOX_STRIDE;
+    pAnchors  += AI_SSD_PP_BOX_STRIDE;
+    pScoresIn += pInput_static_param->nb_classes;
+
   } // for i
   pInput_static_param->nb_detect = nb_detect;
 
@@ -318,10 +386,10 @@ int32_t ssd_pp_nms_filtering(od_ssd_pp_in_centroid_t *pInput,
             {
                 continue;
             }
-            float32_t *pA = &(pBoxes[AI_SSD_PP_BOX_STRIDE * i + AI_SSD_PP_CENTROID_YCENTER]);
+            float32_t *pA = &(pBoxes[AI_SSD_PP_BOX_STRIDE * i + AI_SSD_PP_CENTROID_XCENTER]);
             for (j = i + 1; j < pInput_static_param->nb_detect; ++j)
             {
-                float32_t *pB = &(pBoxes[AI_SSD_PP_BOX_STRIDE * j + AI_SSD_PP_CENTROID_YCENTER]);
+                float32_t *pB = &(pBoxes[AI_SSD_PP_BOX_STRIDE * j + AI_SSD_PP_CENTROID_XCENTER]);
                 if (vision_models_box_iou(pA, pB) > pInput_static_param->iou_threshold)
                 {
                     pScores[j * pInput_static_param->nb_classes + k] = 0;
@@ -347,7 +415,7 @@ int32_t ssd_pp_nms_filtering(od_ssd_pp_in_centroid_t *pInput,
 }
 
 int32_t ssd_pp_nms_filtering_scratchBuffer(od_pp_outBuffer_t *pScratchBuffer,
-                                          od_ssd_pp_static_param_t *pInput_static_param)
+                                           od_ssd_pp_static_param_t *pInput_static_param)
 {
   int32_t i, j, k, limit_counter;
 
@@ -375,28 +443,28 @@ int32_t ssd_pp_nms_filtering_scratchBuffer(od_pp_outBuffer_t *pScratchBuffer,
               (_Cmpfun *)ssd_nms_comparator);
         for (i = 0; i < detections_per_class; i++)
         {
-            if (pScratchBuffer[i].conf == 0)
+            if (pScratchBuffer[i].conf == 0.0)
             {
                 continue;
             }
             float32_t *pA = &(pScratchBuffer[i].x_center);
             for (j = i + 1; j < detections_per_class; j++)
             {
-                if (pScratchBuffer[j].conf == 0)
+                if (pScratchBuffer[j].conf == 0.0)
                 {
                   continue;
                 }
                 float32_t *pB = &(pScratchBuffer[j].x_center);
                 if (vision_models_box_iou(pA, pB) > pInput_static_param->iou_threshold)
                 {
-                    pScratchBuffer[j].conf = 0;
+                    pScratchBuffer[j].conf = 0.0;
                 }
             }
         }
 
         for (int32_t it = 0; it < detections_per_class; ++it)
         {
-            if ((pScratchBuffer[it].conf != 0) &&
+            if ((pScratchBuffer[it].conf != 0.0) &&
                 (limit_counter < pInput_static_param->max_boxes_limit))
             {
                 limit_counter++;
@@ -404,7 +472,7 @@ int32_t ssd_pp_nms_filtering_scratchBuffer(od_pp_outBuffer_t *pScratchBuffer,
             else
             {
 
-                pScratchBuffer[it].conf = 0;
+                pScratchBuffer[it].conf = 0.0;
             }
         }
         } // if detections
@@ -425,30 +493,28 @@ int32_t ssd_pp_score_filtering(od_ssd_pp_in_centroid_t *pInput,
 
 
     int32_t count = 0;
-    for (int32_t i = 0; i < pInput_static_param->nb_detect; i+=4)
+    for (int32_t i = 0; i < pInput_static_param->nb_detect; i++)
     {
-      uint32_t class_index[4];
-      float32_t best_score[4];
-      vision_models_maxi_p_if32ou32(&(pScores[i * pInput_static_param->nb_classes]),
-                                  pInput_static_param->nb_classes,
-                                  pInput_static_param->nb_classes,
-                                  best_score,
-                                  class_index,
-                                  pInput_static_param->nb_detect-i);
+      uint32_t class_index;
+      float32_t best_score;
+      vision_models_maxi_if32ou32(pScores + 1,
+                                  pInput_static_param->nb_classes-1,
+                                  &best_score,
+                                  &class_index);
 
-      for (int _i = 0; _i < MIN(4,pInput_static_param->nb_detect-i); _i++) {
-        if (best_score[_i] >= pInput_static_param->conf_threshold)
-        {
-            pOutput->pOutBuff[count].class_index = class_index[_i];
-            pOutput->pOutBuff[count].conf = best_score[_i];
-            pOutput->pOutBuff[count].x_center = pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_XCENTER];
-            pOutput->pOutBuff[count].y_center = pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_YCENTER];
-            pOutput->pOutBuff[count].width    = pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_WIDTHREL];
-            pOutput->pOutBuff[count].height   = pBoxes[(i + _i) * AI_SSD_PP_BOX_STRIDE + AI_SSD_PP_CENTROID_HEIGHTREL];
+      if (best_score >= pInput_static_param->conf_threshold)
+      {
+          pOutput->pOutBuff[count].class_index = class_index + 1;
+          pOutput->pOutBuff[count].conf = best_score ;
+          pOutput->pOutBuff[count].x_center = pBoxes[AI_SSD_PP_CENTROID_XCENTER];
+          pOutput->pOutBuff[count].y_center = pBoxes[AI_SSD_PP_CENTROID_YCENTER];
+          pOutput->pOutBuff[count].width    = pBoxes[AI_SSD_PP_CENTROID_WIDTHREL];
+          pOutput->pOutBuff[count].height   = pBoxes[AI_SSD_PP_CENTROID_HEIGHTREL];
 
-            count++;
-        }
+          count++;
       }
+      pBoxes+=AI_SSD_PP_BOX_STRIDE;
+      pScores+=pInput_static_param->nb_classes;
 
     }
     pOutput->nb_detect = count;
@@ -464,17 +530,13 @@ int32_t ssd_pp_score_filtering_scratchBuffer(od_pp_outBuffer_t *pScratch,
   od_pp_outBuffer_t *pOutBuff = pOutput->pOutBuff;
   for (int32_t i = 0; i < pInput_static_param->nb_detect; i++)
   {
-    if (pOutBuff[i].conf)
+    if (pScratch->conf != 0.0)
     {
-        pOutBuff[count].class_index = pScratch[i].class_index;
-        pOutBuff[count].conf        = pScratch[i].conf;
-        pOutBuff[count].x_center    = pScratch[i].x_center;
-        pOutBuff[count].y_center    = pScratch[i].y_center;
-        pOutBuff[count].width       = pScratch[i].width;
-        pOutBuff[count].height      = pScratch[i].height;
-
-        count++;
+      memcpy(pOutBuff, pScratch, sizeof(od_pp_outBuffer_t));
+      pOutBuff++;
+      count++;
     }
+    pScratch++;
   }
 
   pOutput->nb_detect = count;
@@ -498,7 +560,7 @@ int32_t od_ssd_pp_process(od_ssd_pp_in_centroid_t *pInput,
 {
   int32_t error = AI_OD_POSTPROCESS_ERROR_NO;
 
-  od_pp_outBuffer_t *pScratchBuffer = pInput_static_param->scratchBuffer;
+  od_pp_outBuffer_t *pScratchBuffer = pInput_static_param->pScratchBuffer;
   /* if no scratch buffer is specified and space enough in score array, use it as scratch buffer */
   if (   (pScratchBuffer == NULL)
       && (pInput_static_param->nb_classes * sizeof(float32_t) >= sizeof(od_pp_outBuffer_t))) {
@@ -526,21 +588,21 @@ int32_t od_ssd_pp_process(od_ssd_pp_in_centroid_t *pInput,
 
     /* Then NMS */
     error = ssd_pp_nms_filtering_scratchBuffer(pScratchBuffer,
-                                pInput_static_param);
+                                               pInput_static_param);
     if (error != AI_OD_POSTPROCESS_ERROR_NO) return (error);
 
     /* And score re-filtering */
     error = ssd_pp_score_filtering_scratchBuffer(pScratchBuffer,
-                                  pOutput,
-                                  pInput_static_param);
+                                                 pOutput,
+                                                 pInput_static_param);
 
   }
   else
   {
 
   /* Calls Get NN boxes first */
-  error = ssd_pp_getNNBoxes(pInput,
-                            pInput_static_param);
+  error = ssd_pp_getNNBoxes_in_place(pInput,
+                                     pInput_static_param);
   if (error != AI_OD_POSTPROCESS_ERROR_NO) return (error);
 
   /* Then NMS */
@@ -563,7 +625,7 @@ int32_t od_ssd_pp_process_int8(od_ssd_pp_in_centroid_t *pInput,
 {
   int32_t error = AI_OD_POSTPROCESS_ERROR_NO;
 
-  od_pp_outBuffer_t *pScratchBuffer = pInput_static_param->scratchBuffer;
+  od_pp_outBuffer_t *pScratchBuffer = pInput_static_param->pScratchBuffer;
   /* if no scratch buffer is specified and space enough in score array, use it as scratch buffer */
   if (pScratchBuffer == NULL)
   {

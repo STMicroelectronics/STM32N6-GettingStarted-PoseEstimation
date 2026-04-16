@@ -4,7 +4,7 @@
 
 This document provides an overview of the Uvc Library (aka uvcl).
 
-Uvcl will allows you to easily add Usb Uvc support to your N6 application. It has a very simple API and can be
+Uvcl allows you to easily add USB UVC support to your N6 application. It has a very simple API and can be
 configured at compile time.
 
 ## Build configuration
@@ -38,7 +38,7 @@ typedef struct {
   int width;
   int height;
   int fps;
-  /* Only for variable size payload. If zero a default value is choose */
+  /* Only for variable size payload. If zero a default value is chosen */
   uint32_t dwMaxVideoFrameSize;
 } UVCL_StreamConf_t;
 ```

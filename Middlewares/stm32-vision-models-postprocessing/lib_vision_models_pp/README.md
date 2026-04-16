@@ -8,13 +8,13 @@ This readme explains how to use the different available post-processing code.
 
 | Models        | Task                        |
 |---------------|-----------------------------|
+| YOLO-D        | person detection            |
 | ST YOLOX      | person detection            |
 | YOLOv8        | person detection            |
 | YOLOv5        | person detection            |
 | YOLOv4        | person detection            |
 | Tiny Yolo V2  | person detection            |
-| Standard SSD  | person detection            |
-| ST SSD        | person detection            |
+| SSD           | person detection            |
 | Centernet     | person detection            |
 | Blazeface     | face detection              |
 | Yunet         | face detection              |
@@ -26,6 +26,27 @@ This readme explains how to use the different available post-processing code.
 | CNN_pd        | palm detection              |
 
 ## Version History
+
+### v0.14.2 - 2026-01-21
+
+- **Improvements:**
+  - updated object-detection YOLO-D, SSD and palm-detection:
+		- Fix some compilation warnings
+
+### v0.14.1 - 2026-01-12
+
+- **New Features:**
+  - updated object-detection YOLO-D od_yunet_pp along with new model:
+		- API Update (with, height from input dim of the model replaced nb_total_boxes, strides have been added to parameters) 
+
+### v0.14.0 - 2025-12-18
+
+- **New Features:**
+  - added object-detection YOLO-D od_yunet_pp
+  - updated object-detection SSD model post-processing od_ssd_pp: major changes
+- **Remove Features:**
+  - updated object-detection SSD model post-processing od_ssd_pp
+  - removed object-detection SSD_ST model post-processing od_ssd_st_pp
 
 ### v0.13.0 - 2025-11-21
 
@@ -816,6 +837,134 @@ This function performs the post-processing steps for Tiny YOLOV2 object detectio
 
 </details>
 
+<details>
+
+## YOLO-D Object Detection Post-Processing
+
+<details>
+
+### YOLO-D Structures
+---
+#### `od_yolo_d_pp_in_centroid_t`
+
+This structure is used for YOLO-D post-processing input where the raw detections are in float32_t/int8_t format.
+
+Parameters:
+
+- **void_t \*pRaw_detections**: Pointer to raw detection data in float32_t format.
+---
+#### `od_yolo_d_pp_static_param_t`
+
+This structure holds the static parameters required for YOLO-D post-processing.
+
+Parameters:
+
+- **int32_t nb_classes**: Number of classes in the detection model. Extraced fom the model output shape.
+- **uint32_t height**: Image height as input of the model. Extraced fom the model output shape.
+- **uint32_t width**: Image width as input of the model. Extraced fom the model output shape.
+- **int32_t nb_total_boxes**: Total number of boxes predicted by the model. Extraced fom the model output shape.
+- **int32_t max_boxes_limit**: Maximum number of boxes per class to be considered after post-processing.
+- **float32_t conf_threshold**: Confidence threshold for filtering detections. High confidence helps filtering out low-confidence detections (False positives), However, it is essential to balance the threshold value to ensure that you do not miss too many true positives.
+- **float32_t iou_threshold**: Intersection over Union (IoU) threshold for Non-Maximum Suppression (NMS).A high IoU threshold means that more overlapping will be allowed between boxes, while a lower threshold will allow less boxes to be retained.
+- **float32_t raw_output_scale**: Scale factor for raw output values. Extraced fom the model output.
+- **int32_t nb_detect**: Number of detections after post-processing.
+- **uint8_t *strides**: Pointer to strides array (array is {8, 16, 32} for example. Extraced fom the model.
+- **uint8_t strides_nb**: Number of strides (3 for example). Extraced fom the model.
+- **int8_t raw_output_zero_point**: Zero point for quantized raw output values. Extraced fom the model output.
+---
+### YOLO-D Routines
+---
+#### Pointer initialization
+
+Output buffer must be allocated. Worst case would be to have a detection for each box (sum of the grid dimension (input dimension divided by stride) for each stride).
+
+```c
+od_pp_outBuffer_t outBuffer[ (AI_OD_YOLO_D_PP_IMG_WIDTH / AI_OD_YOLO_D_PP_STRIDE_0) * ( AI_OD_YOLO_D_PP_IMG_HEIGHT / AI_OD_YOLO_D_PP_STRIDE_0) \
+                           + (AI_OD_YOLO_D_PP_IMG_WIDTH / AI_OD_YOLO_D_PP_STRIDE_1) * ( AI_OD_YOLO_D_PP_IMG_HEIGHT / AI_OD_YOLO_D_PP_STRIDE_1) \
+                           + (AI_OD_YOLO_D_PP_IMG_WIDTH / AI_OD_YOLO_D_PP_STRIDE_2) * ( AI_OD_YOLO_D_PP_IMG_HEIGHT / AI_OD_YOLO_D_PP_STRIDE_2))];
+
+```
+
+#### `od_yolo_d_pp_reset`
+
+**Purpose**:  
+Resets the static parameters for YOLO-D post-processing.
+
+**Prototype**:  
+```c
+int32_t od_yolo_d_pp_reset(od_yolo_d_pp_static_param_t *pInput_static_param);
+```
+
+**Parameters**:  
+- **pInput_static_param**: Pointer to the static parameters structure.
+
+**Returns**:  
+- **AI_OD_POSTPROCESS_ERROR_NO** on success.
+
+**Description**:  
+This function initializes the static parameters for the YOLO-D post-processing by setting the number of detected objects to zero.
+
+---
+
+#### `od_yolo_d_pp_process`
+
+**Purpose**:  
+Processes the YOLO-D post-processing pipeline for float32_t input data.
+
+**Prototype**:  
+```c
+int32_t od_yolo_d_pp_process(od_yolo_d_pp_in_centroid_t *pInput,
+                             od_pp_out_t *pOutput,
+                             od_yolo_d_pp_static_param_t *pInput_static_param);
+```
+
+**Parameters**:  
+- **pInput**: Pointer to the post-processing input structure.
+- **pOutput**: Pointer to the post-processing output structure.
+- **pInput_static_param**: Pointer to the static parameters structure.
+
+**Returns**:  
+- **AI_OD_POSTPROCESS_ERROR_NO** on success.
+
+**Description**:  
+This function performs the post-processing steps for YOLO-D object detection. It first retrieves the neural network boxes, then applies Non-Maximum Suppression (NMS), and finally performs score re-filtering.
+
+---
+
+#### `od_yolo_d_pp_process_int8`
+
+**Purpose**:  
+Processes the YOLO-D post-processing pipeline for int8_t input data.
+
+**Prototype**:  
+```c
+int32_t  od_yolo_d_pp_process_int8(od_yolo_d_pp_in_centroid_t *pInput,
+                                  od_pp_out_t *pOutput,
+                                  od_yolo_d_pp_static_param_t *pInput_static_param);
+```
+
+**Parameters**:  
+- **pInput**: Pointer to the post-processing input structure.
+- **pOutput**: Pointer to the post-processing output structure.
+- **pInput_static_param**: Pointer to the static parameters structure.
+
+**Returns**:  
+- **AI_OD_POSTPROCESS_ERROR_NO** on success, or an error code on failure.
+
+**Description**:  
+This function performs the post-processing steps for YOLO-D object detection with int8_t input data. It first retrieves the neural network boxes, then applies Non-Maximum Suppression (NMS), and finally performs score re-filtering.
+
+---
+
+### Error Codes
+
+- **AI_OD_POSTPROCESS_ERROR_NO**: Indicates successful execution of the function.
+- **AI_OD_POSTPROCESS_ERROR**: Indicates an error occured during execution of the function.
+
+---
+
+</details>
+
 ## Standard SSD Object Detection Post-Processing
 <details>
 
@@ -828,7 +977,6 @@ This structure is used for Standard SSD post-processing input where the raw dete
 Parameters:
 
 - **void \*pBoxes**: Pointer to the raw Boxes data in float32_t/int8_t format.
-- **void \*pAnchors**: Pointer to the Anchors data in float32_t/int8_t format.
 - **void \*pScores**: Pointer to the Scores data in float32_t/int8_t format.
 ---
 #### `od_ssd_pp_static_param_t`
@@ -838,24 +986,48 @@ This structure holds the static parameters required for Standard SSD post-proces
 Parameters:
 
 - **int32_t nb_classes**: Number of classes in the detection model. To extract fom the model output shape.
-- **float32_t XY_scale**: Scale factor applied to the XY coordinates of the bounding boxes. To extract fom the tflite post-processing layer (before removing it from the model).
-- **float32_t WH_scale**: Scale factor applied to the width and height of the bounding boxes. To extract fom the tflite post-processing layer (before removing it from the model).
 - **int32_t nb_detections**: Total number of boxes predicted by the model. To extract fom the model output shape.
+- **float32_t XY_inv_scale**: Inverse scale factor applied to the XY coordinates of the bounding boxes. To extract fom the tflite post-processing layer (before removing it from the model).
+- **float32_t WH_inv_scale**: Invers scale factor applied to the width and height of the bounding boxes. To extract fom the tflite post-processing layer (before removing it from the model).
 - **int32_t max_boxes_limit**: Maximum number of boxes per class to be considered after post-processing.
 - **float32_t conf_threshold**: Confidence threshold for filtering detections. High confidence helps filtering out low-confidence detections (False positives), However, it is essential to balance the threshold value to ensure that you do not miss too many true positives.
 - **float32_t iou_threshold**: Intersection over Union (IoU) threshold for Non-Maximum Suppression (NMS).A high IoU threshold means that more overlapping will be allowed between boxes, while a lower threshold will allow less boxes to be retained.
 - **int32_t nb_detect**: Number of detections after post-processing.
+- **void \*pAnchors**: Pointer to the anchors in float32_t format.
 - **void \*scratchBuffer**: pointer to a scratch buffer with size AI_OD_SSD_PP_TOTAL_DETECTIONS * sizeof(od_pp_outBuffer_t).  If set to NULL, and sizeof input (i.e. AI_OD_YOLOV2_PP_NB_CLASSES * sizeof(<input_data>) >= sizeof(od_pp_outBuffer_t)), would be overlayed with scores data buffer.
-- **float32_t boxe_scale**: Scale factor for model quantized raw output boxes values
-- **float32_t anchor_scale**: Scale factor for model quantized raw output anchors values
-- **float32_t score_scale**: Scale factor for model quantized raw output scores values
-- **int8_t boxe_zero_point**: Zero point for moldel quantized raw output boxes values
-- **int8_t anchor_zero_point**: Zero point for moldel quantized raw output anchors values
-- **int8_t score_zero_point**: Zero point for moldel quantized raw output scores values
+- **float32_t \*pScratchBufferSoftMax**: (int8 PP only) pointer to as scratch buffer with size AI_OD_SSD_PP_NB_CLASSES * float32_t to store temporary float scores values when running int8 post-processing
+- **float32_t boxe_scale**: (int8 PP only) Scale factor for model quantized raw output boxes values
+- **float32_t score_scale**: (int8 PP only) Scale factor for model quantized raw output scores values
+- **int8_t boxe_zero_point**: (int8 PP only) Zero point for moldel quantized raw output boxes values
+- **int8_t score_zero_point**: (int8 PP only) Zero point for moldel quantized raw output scores values
 
 ---
 ### Standard SSD Routines
 ---
+#### Pointer initialization
+
+Scratch buffer pointer in od_ssd_pp_static_param_t, optional if float post-prcessing but required when using int8 post-prcessing:
+```c
+od_pp_outBuffer_t scratch_buffer[AI_OD_SSD_PP_TOTAL_DETECTIONS];
+```
+
+```c
+od_ssd_pp_static_param_t od_input_param;
+
+od_input_param.pScratchBuff = scratch_buffer;
+
+```
+Scratch buffer for float temporary scores pointer in od_ssd_pp_static_param_t required when using int8 post-prcessing:
+```c
+float32_t scratch_buffer_sm[AI_OD_SSD_PP_NB_CLASSES];
+```
+
+```c
+od_input_param.pScratchBufferSoftMax = scratch_buffer_sm;
+
+```
+
+
 #### `od_ssd_pp_reset`
 
 **Purpose**:  
@@ -937,124 +1109,6 @@ This function performs the post-processing steps for Standard SSD object detecti
 
 </details>
 
-## ST SSD Object Detection Post-Processing
-<details>
-
-### ST SSD Structures
----
-#### `od_ssd_st_pp_in_centroid_t`
-
-This structure is used for ST SSD post-processing input where the raw detections are in float32_t/int8_t format.
-
-Parameters:
-
-- **void \*pBoxes**: Pointer to the raw Boxes data in float32_t/int8_t format.
-- **void \*pAnchors**: Pointer to the Anchors data in float32_t/int8_t format.
-- **void \*pScores**: Pointer to the Scores data in float32_t/int8_t format.
----
-#### `od_ssd_st_pp_static_param_t`
-
-This structure holds the static parameters required for ST SSD post-processing.
-
-Parameters:
-
-- **int32_t nb_classes**: Number of classes in the detection model. To extract fom the model output shape.
-- **int32_t nb_detections**: Total number of boxes predicted by the model. To extract fom the model output shape.
-- **int32_t max_boxes_limit**: Maximum number of boxes per class to be considered after post-processing.
-- **float32_t conf_threshold**: Confidence threshold for filtering detections. High confidence helps filtering out low-confidence detections (False positives), However, it is essential to balance the threshold value to ensure that you do not miss too many true positives.
-- **float32_t iou_threshold**: Intersection over Union (IoU) threshold for Non-Maximum Suppression (NMS).A high IoU threshold means that more overlapping will be allowed between boxes, while a lower threshold will allow less boxes to be retained.
-- **int32_t nb_detect**: Number of detections after post-processing.
-- **void \*scratchBuffer**: pointer to a scratch buffer with size AI_OD_SSD_PP_TOTAL_DETECTIONS * sizeof(od_pp_outBuffer_t).  If set to NULL, and sizeof input (i.e. AI_OD_YOLOV2_PP_NB_CLASSES * sizeof(<input_data>) >= sizeof(od_pp_outBuffer_t)), would be overlayed with scores data buffer.
-- **float32_t boxe_scale**: Scale factor for model quantized raw output boxes values
-- **float32_t anchor_scale**: Scale factor for model quantized raw output anchors values
-- **float32_t score_scale**: Scale factor for model quantized raw output scores values
-- **int8_t boxe_zero_point**: Zero point for moldel quantized raw output boxes values
-- **int8_t anchor_zero_point**: Zero point for moldel quantized raw output anchors values
-- **int8_t score_zero_point**: Zero point for moldel quantized raw output scores values
----
-### ST SSD Routines
----
-#### `od_ssd_st_pp_reset`
-
-**Purpose**:  
-Resets the static parameters for ST SSD post-processing.
-
-**Prototype**:  
-```c
-int32_t od_ssd_st_pp_reset(od_ssd_st_pp_static_param_t *pInput_static_param);
-
-```
-
-**Parameters**:  
-- **pInput_static_param**: Pointer to the static parameters structure.
-
-**Returns**:  
-- **AI_OD_POSTPROCESS_ERROR_NO** on success.
-
-**Description**:  
-This function initializes the static parameters for the ST SSD post-processing by setting the number of detected objects to zero.
-
----
-
-#### `od_ssd_st_pp_process`
-
-**Purpose**:  
-Processes the ST SSD post-processing pipeline for float32_t input data.
-
-**Prototype**:  
-```c
-int32_t od_ssd_st_pp_process(od_ssd_st_pp_in_centroid_t *pInput,
-                             od_pp_out_t *pOutput,
-                             od_ssd_st_pp_static_param_t *pInput_static_param);
-```
-
-**Parameters**:  
-- **pInput**: Pointer to the post-processing input structure.
-- **pOutput**: Pointer to the post-processing output structure.
-- **pInput_static_param**: Pointer to the static parameters structure.
-
-**Returns**:  
-- **AI_OD_POSTPROCESS_ERROR_NO** on success, or an error code on failure.
-
-**Description**:  
-This function performs the post-processing steps for ST SSD object detection. It first retrieves the neural network boxes, then applies Non-Maximum Suppression (NMS), and finally performs score re-filtering.
-
----
-
-#### `od_ssd_st_pp_process_int8`
-
-**Purpose**:  
-Processes the ST SSD post-processing pipeline for int8_t input data.
-
-**Prototype**:  
-```c
-int32_t od_ssd_st_pp_process_int8(od_ssd_st_pp_in_centroid_t *pInput,
-                                  od_pp_out_t *pOutput,
-                                  od_ssd_st_pp_static_param_t *pInput_static_param);
-```
-
-**Parameters**:  
-- **pInput**: Pointer to the post-processing input structure.
-- **pOutput**: Pointer to the post-processing output structure.
-- **pInput_static_param**: Pointer to the static parameters structure.
-
-**Returns**:  
-- **AI_OD_POSTPROCESS_ERROR_NO** on success, or an error code on failure.
-
-**Description**:  
-This function performs the post-processing steps for ST SSD object detection. It first retrieves the neural network boxes, then applies Non-Maximum Suppression (NMS), and finally performs score re-filtering.
-
----
-
-### Error Codes
-
-- **AI_OD_POSTPROCESS_ERROR_NO**: Indicates successful execution of the function.
-- **AI_OD_POSTPROCESS_ERROR**: Indicates an error occured during execution of the function.
-
----
-
-</details>
-
 
 ## ST YOLOX Object Detection Post-Processing
 <details>
@@ -1102,6 +1156,17 @@ Parameters:
 ---
 ### ST YOLOX Routines
 ---
+#### Pointer initialization
+
+Output buffer must be allocated. Worst case would be to have a detection for each box.
+
+```c
+od_pp_outBuffer_t outBuffer[AI_OBJDETECT_YOLOVX_PP_NB_ANCHORS * MAX(AI_OBJDETECT_YOLOVX_PP_MAX_BOXES_LIMIT,
+                                                                    AI_OBJDETECT_YOLOVX_PP_L_NB_INPUT_BOXES
+                                                                    + AI_OBJDETECT_YOLOVX_PP_M_NB_INPUT_BOXES
+                                                                    + AI_OBJDETECT_YOLOVX_PP_S_NB_INPUT_BOXES)];
+
+```
 #### `od_st_yolox_pp_reset`
 
 **Purpose**:  

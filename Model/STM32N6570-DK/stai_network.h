@@ -404,7 +404,7 @@ STAI_API_DECLARE_END
   }
 #define STAI_NETWORK_WEIGHTS_NAMES \
   { \
-    "Conv2D_7_weights", "Conv2D_16_weights", "Conv2D_19_weights", "Conv2D_28_weights", "Conv2D_31_weights", "Conv2D_40_weights", "Conv2D_46_weights", "Conv2D_49_weights", "Conv2D_58_weights", "Conv2D_61_weights", "Conv2D_70_weights", "Conv2D_76_weights", "Conv2D_85_weights", "Conv2D_91_weights", "Conv2D_94_weights", "Conv2D_103_weights", "Conv2D_106_weights", "Conv2D_111_weights", "Conv2D_115_weights", "Conv2D_121_weights", "Conv2D_126_weights", "Conv2D_130_weights", "Conv2D_136_weights", "Conv2D_141_weights", "Conv2D_145_weights", "Conv2D_151_weights", "Conv2D_154_weights", "Conv2D_159_weights", "Conv2D_163_weights", "Conv2D_166_weights", "Conv2D_171_weights", "Conv2D_175_weights", "Conv2D_181_weights", "Conv2D_186_weights", "Conv2D_190_weights", "Conv2D_196_weights", "Conv2D_205_weights", "Conv2D_208_weights", "Conv2D_213_weights", "Conv2D_217_weights", "Conv2D_223_weights", "Conv2D_228_weights", "Conv2D_232_weights", "Conv2D_238_weights", "Conv2D_243_weights", "Conv2D_247_weights", "Conv2D_250_weights", "Conv2D_254_weights", "Conv2D_265_weights", "Conv2D_277_weights", "Conv2D_289_weights", "Conv2D_297_weights", "Conv2D_301_weights", "Conv2D_166_mul_scale_324", "Conv2D_166_off_bias_329", "Conv2D_171_mul_scale_333", "Conv2D_171_off_bias_338", "Conv2D_181_mul_scale_348", "Conv2D_181_off_bias_353", "Conv2D_186_mul_scale_357", "Conv2D_186_off_bias_362", "Conv2D_196_mul_scale_375", "Conv2D_196_off_bias_380", "Conv2D_201_mul_scale_384", "Conv2D_201_off_bias_389", "Conv2D_208_mul_scale_402", "Conv2D_208_off_bias_407", "Conv2D_213_mul_scale_411", "Conv2D_213_off_bias_416", "Conv2D_223_mul_scale_429", "Conv2D_223_off_bias_434", "Conv2D_228_mul_scale_438", "Conv2D_228_off_bias_443", "Conv2D_238_mul_scale_456", "Conv2D_238_off_bias_461", "Conv2D_243_mul_scale_465", "Conv2D_243_off_bias_470", "Conv2D_250_mul_scale_483", "Conv2D_250_off_bias_488", "Conv2D_12_weights_inflated_580", "Conv2D_24_weights_inflated_582", "Conv2D_36_weights_inflated_584", "Conv2D_54_weights_inflated_586", "Conv2D_66_weights_inflated_588", "Conv2D_81_weights_inflated_590", "Conv2D_99_weights_inflated_592", "Conv2D_201_weights_inflated_600", "Conv2D_262_weights_inflated_605", "Conv2D_274_weights_inflated_607", "Conv2D_286_weights_inflated_609", "Conv2D_294_weights_inflated_611", "Canonic_default_init_for_ROI_optional_input_661", "Canonic_default_init_for_SCALES_optional_input_662", "Canonic_default_init_for_ROI_optional_input_663", "Canonic_default_init_for_SCALES_optional_input_664", "Canonic_default_init_for_ROI_optional_input_665", "Canonic_default_init_for_SCALES_optional_input_666", "Conv2D_254_off_bias_495_775_atonn_internal_scale", "Conv2D_254_off_bias_495_775_atonn_internal_offset", "Resize_257_777_atonn_internal_scale", "Resize_257_777_atonn_internal_offset", "Conv2D_265_off_bias_513_781_atonn_internal_scale", "Conv2D_265_off_bias_513_781_atonn_internal_offset", "Resize_269_783_atonn_internal_scale", "Resize_269_783_atonn_internal_offset", "Conv2D_277_off_bias_531_787_atonn_internal_scale", "Conv2D_277_off_bias_531_787_atonn_internal_offset", "Resize_281_789_atonn_internal_scale", "Resize_281_789_atonn_internal_offset" \
+    "Conv2D_7_weights", "Conv2D_16_weights", "Conv2D_19_weights", "Conv2D_28_weights", "Conv2D_31_weights", "Conv2D_40_weights", "Conv2D_46_weights", "Conv2D_49_weights", "Conv2D_58_weights", "Conv2D_61_weights", "Conv2D_70_weights", "Conv2D_76_weights", "Conv2D_85_weights", "Conv2D_91_weights", "Conv2D_94_weights", "Conv2D_103_weights", "Conv2D_106_weights", "Conv2D_111_weights", "Conv2D_115_weights", "Conv2D_121_weights", "Conv2D_126_weights", "Conv2D_130_weights", "Conv2D_136_weights", "Conv2D_141_weights", "Conv2D_145_weights", "Conv2D_151_weights", "Conv2D_154_weights", "Conv2D_159_weights", "Conv2D_163_weights", "Conv2D_166_weights", "Conv2D_171_weights", "Conv2D_175_weights", "Conv2D_181_weights", "Conv2D_186_weights", "Conv2D_190_weights", "Conv2D_196_weights", "Conv2D_205_weights", "Conv2D_208_weights", "Conv2D_213_weights", "Conv2D_217_weights", "Conv2D_223_weights", "Conv2D_228_weights", "Conv2D_232_weights", "Conv2D_238_weights", "Conv2D_243_weights", "Conv2D_247_weights", "Conv2D_250_weights", "Conv2D_254_weights", "Conv2D_265_weights", "Conv2D_277_weights", "Conv2D_289_weights", "Conv2D_297_weights", "Conv2D_301_weights", "Conv2D_166_mul_scale_324", "Conv2D_166_off_bias_329", "Conv2D_171_mul_scale_333", "Conv2D_171_off_bias_338", "Conv2D_181_mul_scale_348", "Conv2D_181_off_bias_353", "Conv2D_186_mul_scale_357", "Conv2D_186_off_bias_362", "Conv2D_196_mul_scale_375", "Conv2D_196_off_bias_380", "Conv2D_201_mul_scale_384", "Conv2D_201_off_bias_389", "Conv2D_208_mul_scale_402", "Conv2D_208_off_bias_407", "Conv2D_213_mul_scale_411", "Conv2D_213_off_bias_416", "Conv2D_223_mul_scale_429", "Conv2D_223_off_bias_434", "Conv2D_228_mul_scale_438", "Conv2D_228_off_bias_443", "Conv2D_238_mul_scale_456", "Conv2D_238_off_bias_461", "Conv2D_243_mul_scale_465", "Conv2D_243_off_bias_470", "Conv2D_250_mul_scale_483", "Conv2D_250_off_bias_488", "Conv2D_12_weights_inflated_580", "Conv2D_24_weights_inflated_582", "Conv2D_36_weights_inflated_584", "Conv2D_54_weights_inflated_586", "Conv2D_66_weights_inflated_588", "Conv2D_81_weights_inflated_590", "Conv2D_99_weights_inflated_592", "Conv2D_201_weights_inflated_600", "Conv2D_262_weights_inflated_605", "Conv2D_274_weights_inflated_607", "Conv2D_286_weights_inflated_609", "Conv2D_294_weights_inflated_611", "Canonic_default_init_for_ROI_optional_input_1322", "Canonic_default_init_for_SCALES_optional_input_1324", "Canonic_default_init_for_ROI_optional_input_1326", "Canonic_default_init_for_SCALES_optional_input_1328", "Canonic_default_init_for_ROI_optional_input_1330", "Canonic_default_init_for_SCALES_optional_input_1332", "Conv2D_254_off_bias_495_1550_atonn_internal_scale", "Conv2D_254_off_bias_495_1550_atonn_internal_offset", "Resize_257_1554_atonn_internal_scale", "Resize_257_1554_atonn_internal_offset", "Conv2D_265_off_bias_513_1562_atonn_internal_scale", "Conv2D_265_off_bias_513_1562_atonn_internal_offset", "Resize_269_1566_atonn_internal_scale", "Resize_269_1566_atonn_internal_offset", "Conv2D_277_off_bias_531_1574_atonn_internal_scale", "Conv2D_277_off_bias_531_1574_atonn_internal_offset", "Resize_281_1578_atonn_internal_scale", "Resize_281_1578_atonn_internal_offset" \
   }
 #define STAI_NETWORK_WEIGHTS_FORMATS \
   { \
@@ -2643,7 +2643,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_92_ALIGNMENT (32)
-#define STAI_NETWORK_WEIGHTS_92_NAME "Canonic_default_init_for_ROI_optional_input_661"
+#define STAI_NETWORK_WEIGHTS_92_NAME "Canonic_default_init_for_ROI_optional_input_1322"
 #define STAI_NETWORK_WEIGHTS_92_FLAGS (STAI_FLAG_PREALLOCATED|STAI_FLAG_CHANNEL_LAST)
 #define STAI_NETWORK_WEIGHTS_92_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_92_SIZE (8)
@@ -2666,7 +2666,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_93_ALIGNMENT (32)
-#define STAI_NETWORK_WEIGHTS_93_NAME "Canonic_default_init_for_SCALES_optional_input_662"
+#define STAI_NETWORK_WEIGHTS_93_NAME "Canonic_default_init_for_SCALES_optional_input_1324"
 #define STAI_NETWORK_WEIGHTS_93_FLAGS (STAI_FLAG_PREALLOCATED|STAI_FLAG_CHANNEL_LAST)
 #define STAI_NETWORK_WEIGHTS_93_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_93_SIZE (4)
@@ -2689,7 +2689,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_94_ALIGNMENT (32)
-#define STAI_NETWORK_WEIGHTS_94_NAME "Canonic_default_init_for_ROI_optional_input_663"
+#define STAI_NETWORK_WEIGHTS_94_NAME "Canonic_default_init_for_ROI_optional_input_1326"
 #define STAI_NETWORK_WEIGHTS_94_FLAGS (STAI_FLAG_PREALLOCATED|STAI_FLAG_CHANNEL_LAST)
 #define STAI_NETWORK_WEIGHTS_94_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_94_SIZE (8)
@@ -2712,7 +2712,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_95_ALIGNMENT (16)
-#define STAI_NETWORK_WEIGHTS_95_NAME "Canonic_default_init_for_SCALES_optional_input_664"
+#define STAI_NETWORK_WEIGHTS_95_NAME "Canonic_default_init_for_SCALES_optional_input_1328"
 #define STAI_NETWORK_WEIGHTS_95_FLAGS (STAI_FLAG_PREALLOCATED|STAI_FLAG_CHANNEL_LAST)
 #define STAI_NETWORK_WEIGHTS_95_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_95_SIZE (4)
@@ -2735,7 +2735,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_96_ALIGNMENT (32)
-#define STAI_NETWORK_WEIGHTS_96_NAME "Canonic_default_init_for_ROI_optional_input_665"
+#define STAI_NETWORK_WEIGHTS_96_NAME "Canonic_default_init_for_ROI_optional_input_1330"
 #define STAI_NETWORK_WEIGHTS_96_FLAGS (STAI_FLAG_PREALLOCATED|STAI_FLAG_CHANNEL_LAST)
 #define STAI_NETWORK_WEIGHTS_96_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_96_SIZE (8)
@@ -2758,7 +2758,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_97_ALIGNMENT (32)
-#define STAI_NETWORK_WEIGHTS_97_NAME "Canonic_default_init_for_SCALES_optional_input_666"
+#define STAI_NETWORK_WEIGHTS_97_NAME "Canonic_default_init_for_SCALES_optional_input_1332"
 #define STAI_NETWORK_WEIGHTS_97_FLAGS (STAI_FLAG_PREALLOCATED|STAI_FLAG_CHANNEL_LAST)
 #define STAI_NETWORK_WEIGHTS_97_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_97_SIZE (4)
@@ -2781,7 +2781,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_98_ALIGNMENT (16)
-#define STAI_NETWORK_WEIGHTS_98_NAME "Conv2D_254_off_bias_495_775_atonn_internal_scale"
+#define STAI_NETWORK_WEIGHTS_98_NAME "Conv2D_254_off_bias_495_1550_atonn_internal_scale"
 #define STAI_NETWORK_WEIGHTS_98_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_98_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_98_SIZE (1)
@@ -2803,7 +2803,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_99_ALIGNMENT (16)
-#define STAI_NETWORK_WEIGHTS_99_NAME "Conv2D_254_off_bias_495_775_atonn_internal_offset"
+#define STAI_NETWORK_WEIGHTS_99_NAME "Conv2D_254_off_bias_495_1550_atonn_internal_offset"
 #define STAI_NETWORK_WEIGHTS_99_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_99_FORMAT (STAI_FORMAT_Q7)
 #define STAI_NETWORK_WEIGHTS_99_SIZE (1)
@@ -2825,7 +2825,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_100_ALIGNMENT (32)
-#define STAI_NETWORK_WEIGHTS_100_NAME "Resize_257_777_atonn_internal_scale"
+#define STAI_NETWORK_WEIGHTS_100_NAME "Resize_257_1554_atonn_internal_scale"
 #define STAI_NETWORK_WEIGHTS_100_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_100_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_100_SIZE (1)
@@ -2847,7 +2847,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_101_ALIGNMENT (32)
-#define STAI_NETWORK_WEIGHTS_101_NAME "Resize_257_777_atonn_internal_offset"
+#define STAI_NETWORK_WEIGHTS_101_NAME "Resize_257_1554_atonn_internal_offset"
 #define STAI_NETWORK_WEIGHTS_101_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_101_FORMAT (STAI_FORMAT_Q7)
 #define STAI_NETWORK_WEIGHTS_101_SIZE (1)
@@ -2869,7 +2869,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_102_ALIGNMENT (16)
-#define STAI_NETWORK_WEIGHTS_102_NAME "Conv2D_265_off_bias_513_781_atonn_internal_scale"
+#define STAI_NETWORK_WEIGHTS_102_NAME "Conv2D_265_off_bias_513_1562_atonn_internal_scale"
 #define STAI_NETWORK_WEIGHTS_102_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_102_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_102_SIZE (1)
@@ -2891,7 +2891,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_103_ALIGNMENT (16)
-#define STAI_NETWORK_WEIGHTS_103_NAME "Conv2D_265_off_bias_513_781_atonn_internal_offset"
+#define STAI_NETWORK_WEIGHTS_103_NAME "Conv2D_265_off_bias_513_1562_atonn_internal_offset"
 #define STAI_NETWORK_WEIGHTS_103_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_103_FORMAT (STAI_FORMAT_Q7)
 #define STAI_NETWORK_WEIGHTS_103_SIZE (1)
@@ -2913,7 +2913,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_104_ALIGNMENT (32)
-#define STAI_NETWORK_WEIGHTS_104_NAME "Resize_269_783_atonn_internal_scale"
+#define STAI_NETWORK_WEIGHTS_104_NAME "Resize_269_1566_atonn_internal_scale"
 #define STAI_NETWORK_WEIGHTS_104_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_104_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_104_SIZE (1)
@@ -2935,7 +2935,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_105_ALIGNMENT (32)
-#define STAI_NETWORK_WEIGHTS_105_NAME "Resize_269_783_atonn_internal_offset"
+#define STAI_NETWORK_WEIGHTS_105_NAME "Resize_269_1566_atonn_internal_offset"
 #define STAI_NETWORK_WEIGHTS_105_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_105_FORMAT (STAI_FORMAT_Q7)
 #define STAI_NETWORK_WEIGHTS_105_SIZE (1)
@@ -2957,7 +2957,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_106_ALIGNMENT (16)
-#define STAI_NETWORK_WEIGHTS_106_NAME "Conv2D_277_off_bias_531_787_atonn_internal_scale"
+#define STAI_NETWORK_WEIGHTS_106_NAME "Conv2D_277_off_bias_531_1574_atonn_internal_scale"
 #define STAI_NETWORK_WEIGHTS_106_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_106_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_106_SIZE (1)
@@ -2979,7 +2979,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_107_ALIGNMENT (16)
-#define STAI_NETWORK_WEIGHTS_107_NAME "Conv2D_277_off_bias_531_787_atonn_internal_offset"
+#define STAI_NETWORK_WEIGHTS_107_NAME "Conv2D_277_off_bias_531_1574_atonn_internal_offset"
 #define STAI_NETWORK_WEIGHTS_107_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_107_FORMAT (STAI_FORMAT_Q7)
 #define STAI_NETWORK_WEIGHTS_107_SIZE (1)
@@ -3001,7 +3001,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_108_ALIGNMENT (32)
-#define STAI_NETWORK_WEIGHTS_108_NAME "Resize_281_789_atonn_internal_scale"
+#define STAI_NETWORK_WEIGHTS_108_NAME "Resize_281_1578_atonn_internal_scale"
 #define STAI_NETWORK_WEIGHTS_108_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_108_FORMAT (STAI_FORMAT_FLOAT32)
 #define STAI_NETWORK_WEIGHTS_108_SIZE (1)
@@ -3023,7 +3023,7 @@ STAI_API_DECLARE_END
   }
 
 #define STAI_NETWORK_WEIGHTS_109_ALIGNMENT (32)
-#define STAI_NETWORK_WEIGHTS_109_NAME "Resize_281_789_atonn_internal_offset"
+#define STAI_NETWORK_WEIGHTS_109_NAME "Resize_281_1578_atonn_internal_offset"
 #define STAI_NETWORK_WEIGHTS_109_FLAGS (STAI_FLAG_PREALLOCATED)
 #define STAI_NETWORK_WEIGHTS_109_FORMAT (STAI_FORMAT_Q7)
 #define STAI_NETWORK_WEIGHTS_109_SIZE (1)

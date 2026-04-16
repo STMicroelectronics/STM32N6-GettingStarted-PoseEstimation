@@ -313,7 +313,8 @@ static void UVCL_usbx_freertos(PCD_TypeDef *pcd_instance)
   const UBaseType_t cb_priority = tskIDLE_PRIORITY + configMAX_PRIORITIES / 2;
   TaskHandle_t hdl;
 
-  /* FIXME : fix this */
+  /* FIXME: map pcd_instance to the correct IRQn for all supported USB instances (HS/FS);
+   * currently only USB1/USB2 HS are handled. */
   if (pcd_instance == USB1_OTG_HS)
     irqn_type = USB1_OTG_HS_IRQn;
   else if (pcd_instance == USB2_OTG_HS)

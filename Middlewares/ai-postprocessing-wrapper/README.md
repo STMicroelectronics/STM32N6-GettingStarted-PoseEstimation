@@ -25,7 +25,9 @@ To enable the post processing you need to define in a file `app_config.h` the de
 #define POSTPROCESS_OD_YOLO_V8_UI       (104)  /* Yolov8 postprocessing; Input model: uint8; output: int8            */
 #define POSTPROCESS_OD_ST_YOLOX_UF      (105)  /* ST YoloX postprocessing; Input model: uint8; output: float32       */
 #define POSTPROCESS_OD_ST_YOLOX_UI      (106)  /* ST YoloX postprocessing; Input model: uint8; output: int8          */
-#define POSTPROCESS_OD_ST_SSD_UF        (107)  /* ST SSD postprocessing; Input model: uint8; output: float32         */
+#define POSTPROCESS_OD_SSD_UF           (107)  /* SSD postprocessing; Input model: uint8; output: float32            */
+#define POSTPROCESS_OD_SSD_UI           (108)  /* SSD postprocessing; Input model: uint8; output: int8               */
+#define POSTPROCESS_OD_ST_YOLOD_UI      (109)  /* Yolo-d postprocessing; Input model: uint8; output: int8            */
 #define POSTPROCESS_OD_BLAZEFACE_UF     (110)  /* blazeface postprocessing; Input model: uint8; output: float32      */
 #define POSTPROCESS_OD_BLAZEFACE_UU     (111)  /* blazeface postprocessing; Input model: uint8; output: uint8        */
 #define POSTPROCESS_OD_BLAZEFACE_UI     (112)  /* blazeface postprocessing; Input model: uint8; output: int8         */
@@ -180,26 +182,57 @@ static const float32_t AI_OD_ST_YOLOX_PP_S_ANCHORS[2*AI_OD_ST_YOLOX_PP_NB_ANCHOR
 #define AI_OD_ST_YOLOX_PP_MAX_BOXES_LIMIT    (100)
 ```
 
-#### ST SSD
+#### SSD
 
-To use the st ssd postprocessing compile this file:
-`app_postprocess_od_st_ssd_uf.c`
+To use the ssd postprocessing compile one of these files:
 
-For more details about these parameters, see [ST SSD Object Detection Post Processing](../stm32-vision-models-postprocessing/lib_vision_models_pp/README.md#st-ssd-object-detection-post-processing).
+- `app_postprocess_od_ssd_uf.c`: input uint8 ; output float
+- `app_postprocess_od_ssd_ui.c`: input uint8 ; output int8
 
-Example for ST SSD:
+For more details about these parameters, see [SSD Object Detection Post Processing](../stm32-vision-models-postprocessing/lib_vision_models_pp/README.md#standard-ssd-object-detection-post-processing).
+
+Example for SSD:
 
 ```C
-#define POSTPROCESS_TYPE POSTPROCESS_OD_ST_SSD_UF
+#define POSTPROCESS_TYPE POSTPROCESS_OD_SSD_UI
 
 /* I/O configuration */
-#define AI_OD_SSD_ST_PP_TOTAL_DETECTIONS            (3830)
-#define AI_OD_SSD_ST_PP_NB_CLASSES                  (2)
+#define AI_OD_SSD_PP_NB_CLASSES         (81)
+#define AI_OD_SSD_PP_TOTAL_DETECTIONS   (3000)
+#define AI_OD_SSD_PP_XY_VARIANCE        (0.1)
+#define AI_OD_SSD_PP_WH_VARIANCE        (0.2)
 
 /* Postprocessing */
-#define AI_OD_SSD_ST_PP_CONF_THRESHOLD              (0.6f)
-#define AI_OD_SSD_ST_PP_IOU_THRESHOLD               (0.3f)
-#define AI_OD_SSD_ST_PP_MAX_BOXES_LIMIT             (100)
+#define AI_OD_SSD_PP_CONF_THRESHOLD              (0.6f)
+#define AI_OD_SSD_PP_IOU_THRESHOLD               (0.3f)
+#define AI_OD_SSD_PP_MAX_BOXES_LIMIT             (100)
+```
+
+#### Yolo-D
+
+To use the ssd postprocessing compile one of this file:
+
+- `app_postprocess_od_yolo_d_ui.c`: input uint8 ; output int8
+
+For more details about these parameters, see [Yolo-D Object Detection Post Processing](../stm32-vision-models-postprocessing/lib_vision_models_pp/README.md#yolo-d-object-detection-post-processing).
+
+Example for Yolo-D:
+
+```C
+#define POSTPROCESS_TYPE POSTPROCESS_OD_ST_YOLOD_UI
+
+/* I/O configuration */
+#define AI_OD_YOLO_D_PP_NB_CLASSES         (80)
+#define AI_OD_YOLO_D_PP_IMG_WIDTH          (320)
+#define AI_OD_YOLO_D_PP_IMG_HEIGHT         (320)
+#define AI_OD_YOLO_D_PP_STRIDE_0           (8)
+#define AI_OD_YOLO_D_PP_STRIDE_1           (16)
+#define AI_OD_YOLO_D_PP_STRIDE_2           (32)
+
+/* Postprocessing */
+#define AI_OD_YOLO_D_PP_MAX_BOXES_LIMIT   (10)
+#define AI_OD_YOLO_D_PP_CONF_THRESHOLD    (0.5)
+#define AI_OD_YOLO_D_PP_IOU_THRESHOLD     (0.5)
 ```
 
 #### BlazeFace

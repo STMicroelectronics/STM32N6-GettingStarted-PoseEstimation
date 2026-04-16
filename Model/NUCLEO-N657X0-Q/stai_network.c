@@ -52,10 +52,10 @@ static inline stai_return_code __ll_aton_stai_network_get_inputs_or_weights(stai
   const LL_Buffer_InfoTypeDef *input_buffers = nn_i_ptr->input_buffers_info();
 
   /* copy buffer addresses */
-  unsigned cnt = 0;
+  unsigned int cnt = 0;
   if (input_buffers != NULL)
   {
-    for (unsigned idx = 0; input_buffers[idx].name != NULL; idx++)
+    for (unsigned int idx = 0; input_buffers[idx].name != NULL; idx++)
     {
       const LL_Buffer_InfoTypeDef *buffer_info = &input_buffers[idx];
       if (inputs == !buffer_info->is_param)
@@ -132,10 +132,10 @@ static inline stai_return_code __ll_aton_stai_network_get_outputs_or_activations
   }
 
   /* copy buffer addresses */
-  unsigned cnt = 0;
+  unsigned int cnt = 0;
   if (out_activ_buffers != NULL)
   {
-    for (unsigned idx = 0; out_activ_buffers[idx].name != NULL; idx++)
+    for (unsigned int idx = 0; out_activ_buffers[idx].name != NULL; idx++)
     {
       const LL_Buffer_InfoTypeDef *buffer_info = &out_activ_buffers[idx];
       STAI_ASSERT(!buffer_info->is_param); // may never happen
@@ -213,10 +213,10 @@ static inline stai_return_code __ll_aton_stai_network_set_inputs_or_weights(stai
                                                   STAI_ERROR_NETWORK_INVALID_WEIGHTS_NUM);
   }
 
-  unsigned cnt = 0;
+  unsigned int cnt = 0;
   if (input_buffers != NULL)
   {
-    for (unsigned idx = 0; input_buffers[idx].name != NULL; idx++)
+    for (unsigned int idx = 0; input_buffers[idx].name != NULL; idx++)
     {
       const LL_Buffer_InfoTypeDef *buffer_info = &input_buffers[idx];
       if (inputs == !buffer_info->is_param)
@@ -302,10 +302,10 @@ static inline stai_return_code __ll_aton_stai_network_set_outputs_or_activations
       __LL_ATON_STAI_SET_1ST_CTX_ERROR_AND_RETURN((_stai_aton_context *)network, STAI_ERROR_NETWORK_INVALID_OUT_NUM);
   }
 
-  unsigned cnt = 0;
+  unsigned int cnt = 0;
   if (out_activ_buffers != NULL)
   {
-    for (unsigned idx = 0; out_activ_buffers[idx].name != NULL; idx++)
+    for (unsigned int idx = 0; out_activ_buffers[idx].name != NULL; idx++)
     {
       const LL_Buffer_InfoTypeDef *buffer_info = &out_activ_buffers[idx];
       if (buffer_info->is_user_allocated) // is it an user allocatable buffer
@@ -628,7 +628,7 @@ static const stai_network_info __stai_network_network_info = {
     .n_weights = STAI_NETWORK_WEIGHTS_NUM,
     .n_states = STAI_NETWORK_STATES_NUM,
 
-    .c_model_datetime = "2025-12-23 10:06:48",
+    .c_model_datetime = "2026-03-18 15:11:54",
 
     .n_nodes = 261,
 
@@ -2397,5 +2397,6 @@ static const stai_network_info __stai_network_network_info = {
         ),
     },
 #endif // LL_ATON_DBG_BUFFER_INFO_EXCLUDED == 0
+    .states = NULL,
 };
 

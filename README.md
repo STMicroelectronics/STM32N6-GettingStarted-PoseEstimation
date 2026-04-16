@@ -16,6 +16,7 @@ This README provides an overview of the application. Additional documentation is
 ## Table of Contents
 
 - [Features Demonstrated](#features-demonstrated)
+- [Models](#models)
 - [Hardware Support](#hardware-support)
 - [Tools Version](#tools-version)
 - [Boot Modes](#boot-modes)
@@ -62,6 +63,16 @@ This README provides an overview of the application. Additional documentation is
 
 ---
 
+## Models
+
+| Model | Board | Inference time |
+| :---- | :---- | -------------: |
+| st_movenet_lightning_heatmaps_192_int8_pc.tflite | STM32N6570-DK | 18 ms |
+| st_movenet_lightning_heatmaps_192_int8_pc.tflite | NUCLEO-N657X0-Q SPI | 18 ms |
+| st_movenet_lightning_heatmaps_192_int8_pc.tflite | NUCLEO-N657X0-Q UVCL | 14 ms |
+
+---
+
 ## Hardware Support
 
 Supported development platforms:
@@ -101,7 +112,7 @@ NUCLEO-N657X0-Q board with SPI display.
 
 - [STM32CubeIDE](https://www.st.com/content/st_com/en/products/development-tools/software-development-tools/stm32-software-development-tools/stm32-ides/stm32cubeide.html) (__v1.17.0__)
 - [STM32CubeProgrammer](https://www.st.com/en/development-tools/stm32cubeprog.html) (__v2.18.0__)
-- [STEdgeAI](https://www.st.com/en/development-tools/stedgeai-core.html) (__v3.0.0__)
+- [STEdgeAI](https://www.st.com/en/development-tools/stedgeai-core.html) (__v4.0.0__)
 
 ---
 
@@ -124,9 +135,9 @@ Boot from Flash: used to boot firmware from external flash.
 
 This application is a C-based project required by the deployment service in the [ModelZoo](https://github.com/STMicroelectronics/stm32ai-modelzoo-services/tree/main). The ModelZoo enables you to train, evaluate, and automatically deploy any supported model.
 
-To deploy your model using the ModelZoo, refer to the [Deployment README for STM32N6](https://github.com/STMicroelectronics/stm32ai-modelzoo-services/blob/main/pose_estimation/deployment/README_STM32N6.md) for detailed instructions on deploying to either the STM32N6570-DK or the NUCLEO-N657X0-Q.
+To deploy your model using the ModelZoo, refer to the [Deployment README for STM32N6](https://github.com/STMicroelectronics/stm32ai-modelzoo-services/blob/main/pose_estimation/docs/README_DEPLOYMENT_STM32N6.md) for detailed instructions on deploying to either the STM32N6570-DK or the NUCLEO-N657X0-Q.
 
-__Note__: This C-based application is already included in the ModelZoo repository under [STM32N6 pose estimation application code folder](https://github.com/STMicroelectronics/stm32ai-modelzoo-services/tree/main/application_code/pose_estimation/STM32N6).
+__Note__: This C-based application is referenced as a submodule of the ModelZoo repository at `application_code/pose_estimation`.
 
 ---
 
@@ -233,7 +244,7 @@ Navigate to `Application/<board_name>/` and run the following commands (ensure r
     ```
 2. Start a GDB server connected to the STM32 target:
     ```bash
-    ST-LINK_gdbserver -p 61234 -l 1 -d -s -cp <path-to-stm32cubeprogramer-bin-dir> -m 1 -g
+    ST-LINK_gdbserver -p 61234 -l 1 -d -s -cp <path-to-stm32cubeprogrammer-bin-dir> -m 1 -g
     ```
 3. In a separate terminal, launch a GDB session to load the firmware:
     ```bash
@@ -312,7 +323,7 @@ Set your board to [boot from flash](#boot-modes) mode and power cycle to boot fr
 
 ## How to update my project with a new version of ST Edge AI
 
-The neural network model files (`network.c/h`, `stai_network.c/h`, etc.) included in this project were generated using [STEdgeAI](https://www.st.com/en/development-tools/stedgeai-core.html) version 3.0.0.
+The neural network model files (`network.c/h`, `stai_network.c/h`, etc.) included in this project were generated using [STEdgeAI](https://www.st.com/en/development-tools/stedgeai-core.html) version 4.0.0.
 
 Using a different version of STEdgeAI to generate these model files may result in the following compile-time error:  
 `Possible mismatch in ll_aton library used`.

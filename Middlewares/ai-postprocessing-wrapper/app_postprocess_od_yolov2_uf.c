@@ -19,9 +19,9 @@
 
 #include "app_postprocess.h"
 #include "app_config.h"
-#include <assert.h>
 
 #if POSTPROCESS_TYPE == POSTPROCESS_OD_YOLO_V2_UF
+#include <assert.h>
 
 int32_t app_postprocess_init(void *params_postprocess, stai_network_info *NN_Info)
 {

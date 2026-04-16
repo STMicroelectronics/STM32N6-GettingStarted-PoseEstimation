@@ -56,24 +56,21 @@
 
 /*-----------------------------       SSD        -----------------------------*/
 /* Offsets to access SSD input data */
-#define AI_SSD_PP_CENTROID_YCENTER          (0)
-#define AI_SSD_PP_CENTROID_XCENTER          (1)
-#define AI_SSD_PP_CENTROID_HEIGHTREL        (2)
-#define AI_SSD_PP_CENTROID_WIDTHREL         (3)
+#define AI_SSD_PP_CENTROID_XCENTER          (0)
+#define AI_SSD_PP_CENTROID_YCENTER          (1)
+#define AI_SSD_PP_CENTROID_WIDTHREL         (2)
+#define AI_SSD_PP_CENTROID_HEIGHTREL        (3)
 #define AI_SSD_PP_BOX_STRIDE                (4)
 
-/*-----------------------------       SSD  ST      -----------------------------*/
-/* Offsets to access SSD ST input data */
-#define AI_SSD_ST_PP_XMIN          (0)
-#define AI_SSD_ST_PP_YMIN          (1)
-#define AI_SSD_ST_PP_XMAX          (2)
-#define AI_SSD_ST_PP_YMAX          (3)
-#define AI_SSD_ST_PP_BOX_STRIDE    (4)
-
-#define AI_SSD_ST_PP_CENTROID_YCENTER          (0)
-#define AI_SSD_ST_PP_CENTROID_XCENTER          (1)
-#define AI_SSD_ST_PP_CENTROID_HEIGHTREL        (2)
-#define AI_SSD_ST_PP_CENTROID_WIDTHREL         (3)
+/*-----------------------------     YOLO_D      -----------------------------*/
+/* Offsets to access Yolo_d input data */
+#define AI_YOLO_D_PP_XCENTER      (0)
+#define AI_YOLO_D_PP_YCENTER      (1)
+#define AI_YOLO_D_PP_WIDTHREL     (2)
+#define AI_YOLO_D_PP_HEIGHTREL    (3)
+#define AI_YOLO_D_PP_OBJPROB      (4)
+#define AI_YOLO_D_PP_CLASSPROB    (5)
+#define AI_YOLO_D_PP_BOX_STRIDE   (4)
 
 
 /*-----------------------------     CENTER_NET      -----------------------------*/

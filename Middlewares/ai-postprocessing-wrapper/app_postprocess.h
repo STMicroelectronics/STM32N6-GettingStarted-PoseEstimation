@@ -33,7 +33,7 @@ extern "C"
 #include "od_st_yolox_pp_if.h"
 #include "od_centernet_pp_if.h"
 #include "od_ssd_pp_if.h"
-#include "od_ssd_st_pp_if.h"
+#include "od_yolo_d_pp_if.h"
 #include "od_pp_output_if.h"
 #include "mpe_yolov8_pp_if.h"
 #include "mpe_pp_output_if.h"
@@ -56,7 +56,9 @@ extern "C"
 #define POSTPROCESS_OD_YOLO_V8_UI       (104)  /* Yolov8 postprocessing; Input model: uint8; output: int8            */
 #define POSTPROCESS_OD_ST_YOLOX_UF      (105)  /* ST YoloX postprocessing; Input model: uint8; output: float32       */
 #define POSTPROCESS_OD_ST_YOLOX_UI      (106)  /* ST YoloX postprocessing; Input model: uint8; output: int8          */
-#define POSTPROCESS_OD_ST_SSD_UF        (107)  /* ST SSD postprocessing; Input model: uint8; output: float32         */
+#define POSTPROCESS_OD_SSD_UF           (107)  /* SSD postprocessing; Input model: uint8; output: float32            */
+#define POSTPROCESS_OD_SSD_UI           (108)  /* SSD postprocessing; Input model: uint8; output: int8               */
+#define POSTPROCESS_OD_ST_YOLOD_UI      (109)  /* Yolo-d postprocessing; Input model: uint8; output: int8            */
 #define POSTPROCESS_OD_BLAZEFACE_UF     (110)  /* blazeface postprocessing; Input model: uint8; output: float32      */
 #define POSTPROCESS_OD_BLAZEFACE_UU     (111)  /* blazeface postprocessing; Input model: uint8; output: uint8        */
 #define POSTPROCESS_OD_BLAZEFACE_UI     (112)  /* blazeface postprocessing; Input model: uint8; output: int8         */
@@ -71,6 +73,10 @@ extern "C"
 #define POSTPROCESS_FD_BLAZEFACE_UI     (500)  /* BlazeFace postprocessing; Input model: uint8; output: int8         */
 #define POSTPROCESS_FD_YUNET_UI         (501)  /* Yunet postprocessing; Input model: uint8; output: int8             */
 #define POSTPROCESS_CUSTOM              (1000) /* Custom post processing which needs to be implemented by user       */
+
+#ifndef POSTPROCESS_WRAPPER_SECTION
+  #define POSTPROCESS_WRAPPER_SECTION
+#endif
 
 /* Exported functions ------------------------------------------------------- */
 int32_t app_postprocess_init(void *params_postprocess, stai_network_info *NN_Info);

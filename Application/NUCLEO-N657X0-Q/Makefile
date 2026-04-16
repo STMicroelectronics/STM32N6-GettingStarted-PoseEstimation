@@ -155,6 +155,7 @@ SZ = $(PREFIX)size
 CP = $(PREFIX)objcopy
 READELF = $(PREFIX)readelf
 endif
+LD = $(CC)
 HEX = $(CP) -O ihex
 BIN = $(CP) -O binary
 FLASHER = STM32_Programmer_CLI
@@ -229,7 +230,7 @@ CFLAGS += -std=gnu11
 LDSCRIPT = STM32CubeIDE/STM32N657xx.ld
 
 # libraries
-LIBS = -lc -lm -lnosys -l:NetworkRuntime1100_CM55_GCC.a
+LIBS = -lc -lm -lnosys -l:NetworkRuntime1200_CM55_GCC.a
 LIBDIR = -L../../Middlewares/stedgeai-lib/Lib/GCC/ARMCortexM55
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 # Uncomment to enable %f formatted output

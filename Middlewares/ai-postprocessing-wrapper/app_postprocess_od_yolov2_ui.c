@@ -19,9 +19,11 @@
 
 #include "app_postprocess.h"
 #include "app_config.h"
-#include <assert.h>
 
 #if POSTPROCESS_TYPE == POSTPROCESS_OD_YOLO_V2_UI
+#include <assert.h>
+
+POSTPROCESS_WRAPPER_SECTION
 static uint8_t scratch_buffer[AI_OD_YOLOV2_PP_GRID_WIDTH * AI_OD_YOLOV2_PP_GRID_HEIGHT * AI_OD_YOLOV2_PP_NB_ANCHORS * sizeof(od_pp_outBuffer_t)];
 
 int32_t app_postprocess_init(void *params_postprocess, stai_network_info *NN_Info)
@@ -29,6 +31,7 @@ int32_t app_postprocess_init(void *params_postprocess, stai_network_info *NN_Inf
   int32_t error = AI_OD_POSTPROCESS_ERROR_NO;
   od_yolov2_pp_static_param_t *params = (od_yolov2_pp_static_param_t *) params_postprocess;
 
+  assert(NN_Info);
   params->raw_scale = NN_Info->outputs[0].scale.data[0];
   params->raw_zero_point = NN_Info->outputs[0].zeropoint.data[0];
   params->conf_threshold = AI_OD_YOLOV2_PP_CONF_THRESHOLD;

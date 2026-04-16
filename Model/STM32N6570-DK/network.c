@@ -18,9 +18,9 @@
   */
 
 /*
- * GIT_SHA         "80369096c1c1b7ea4d6b2cc985d9e001f59b7c27"
- * GIT_BRANCH      "STAI-3.0"
- * GIT_DESCRIPTION "atonn-v1.1.3-8-g80369096"
+ * GIT_SHA         "7cc654104236b2ac726c804c5d7f201e2afd1c79"
+ * GIT_BRANCH      "STAI-4.0"
+ * GIT_DESCRIPTION "STAI-3.0.0-254-g7cc65410"
  *
  * Command Line options:
  * --load-mdesc-file = "/opt/ST/STEdgeAI/Utilities/configs/stm32n6"
@@ -55,7 +55,7 @@
 #include "ecloader.h"
 #include "ll_aton_cipher.h"
 
-#if LL_ATON_VERSION_MAJOR != 1 || LL_ATON_VERSION_MINOR != 1 || LL_ATON_VERSION_MICRO != 3 || LL_ATON_VERSION_DEV != 8
+#if LL_ATON_VERSION_MAJOR != 1 || LL_ATON_VERSION_MINOR != 1 || LL_ATON_VERSION_MICRO != 3 || LL_ATON_VERSION_DEV != 262
 #  error "Possible mismatch in ll_aton library used"
 #endif
 
@@ -64,7 +64,7 @@
 #endif
 
 /* global pool 8 is 2.52 MB */
-/* index=8 file postfix=xSPI2 name=octoFlash offset=0x70380000  absolute_mode size=63963128 READ_ONLY THROUGHPUT=MID LATENCY=HIGH byte width=1 freq ratio=6 burst max length=MAXINT burst penalty=0 pipelined=ON cacheable=ON read_power=110 write_power=400 use4initializers=YES score=50  */
+/* index=8 file postfix=xSPI2 name=octoFlash offset=0x70380000  absolute_mode size=16777208 READ_ONLY THROUGHPUT=MID LATENCY=HIGH byte width=1 freq ratio=6 burst max length=MAXINT burst penalty=0 pipelined=ON cacheable=ON read_power=110 write_power=400 use4initializers=YES score=50  */
 /* global pool 7 is ? */
 /* index=7 file postfix=xSPI1 name=hyperRAM offset=0x90000000  absolute_mode size=16777208 READ_WRITE THROUGHPUT=MID LATENCY=HIGH byte width=2 freq ratio=5 burst max length=MAXINT burst penalty=0 pipelined=ON cacheable=ON read_power=380 write_power=340 use4initializers=YES score=82  */
 /* global pool 1 is 432.00 KB */
@@ -105,6 +105,10 @@ const LL_Streng_EncryptionTypedef *LL_ATON_BlobEncryption_Info_network()
 
 LL_ATON_User_IO_Result_t LL_ATON_Set_User_Input_Buffer_network(uint32_t num, void* buffer, uint32_t size)
 {
+  LL_ATON_LIB_UNUSED(num);
+  LL_ATON_LIB_UNUSED(buffer);
+  LL_ATON_LIB_UNUSED(size);
+
   { 
     return LL_ATON_User_IO_WRONG_INDEX;
   }
@@ -112,6 +116,8 @@ LL_ATON_User_IO_Result_t LL_ATON_Set_User_Input_Buffer_network(uint32_t num, voi
 
 void *LL_ATON_Get_User_Input_Buffer_network(uint32_t num)
 {
+  LL_ATON_LIB_UNUSED(num);
+
   { 
     return NULL;
   }
@@ -119,6 +125,10 @@ void *LL_ATON_Get_User_Input_Buffer_network(uint32_t num)
 
 LL_ATON_User_IO_Result_t LL_ATON_Set_User_Output_Buffer_network(uint32_t num, void* buffer, uint32_t size)
 {
+  LL_ATON_LIB_UNUSED(num);
+  LL_ATON_LIB_UNUSED(buffer);
+  LL_ATON_LIB_UNUSED(size);
+
   { 
     return LL_ATON_User_IO_WRONG_INDEX;
   }
@@ -126,6 +136,8 @@ LL_ATON_User_IO_Result_t LL_ATON_Set_User_Output_Buffer_network(uint32_t num, vo
 
 void *LL_ATON_Get_User_Output_Buffer_network(uint32_t num)
 {
+  LL_ATON_LIB_UNUSED(num);
+
   { 
     return NULL;
   }
@@ -138,8 +150,9 @@ void *LL_ATON_Get_User_Output_Buffer_network(uint32_t num)
 // Epoch Controller Blob (name='_ec_blob_network_1') micro instructions needed
 
 // Epoch Controller Blob (name='_ec_blob_network_1') start function
-static void _ec_blob_cache_start_func_1(const void *epoch_block) {
+static void _ec_blob_cache_start_func_1(const LL_ATON_RT_EpochBlockItem_t *epoch_block, const NN_Instance_TypeDef *nn_instance) {
   LL_ATON_LIB_UNUSED(epoch_block);
+  LL_ATON_LIB_UNUSED(nn_instance);
 
   /* *** MCU cache invalidate (only) operation (HW, whole range) *** */
   /*     memory pool: 1 */
@@ -153,9 +166,10 @@ static void _ec_blob_cache_start_func_1(const void *epoch_block) {
 /* scheduling epoch=56   nodes=1   ------------------------------------------------------------------- */
 
 
-static void LL_ATON_End_EpochBlock_56(const void *epoch_block)
+static void LL_ATON_End_EpochBlock_56(const LL_ATON_RT_EpochBlockItem_t *epoch_block, const NN_Instance_TypeDef *nn_instance)
 {
   LL_ATON_LIB_UNUSED(epoch_block);
+  LL_ATON_LIB_UNUSED(nn_instance);
 
 
 /* Unit= 27 [PROCESSOR 0] */
@@ -258,8 +272,9 @@ static void LL_ATON_End_EpochBlock_56(const void *epoch_block)
 // Epoch Controller Blob (name='_ec_blob_network_57') micro instructions needed
 
 // Epoch Controller Blob (name='_ec_blob_network_57') start function
-static void _ec_blob_cache_start_func_57(const void *epoch_block) {
+static void _ec_blob_cache_start_func_57(const LL_ATON_RT_EpochBlockItem_t *epoch_block, const NN_Instance_TypeDef *nn_instance) {
   LL_ATON_LIB_UNUSED(epoch_block);
+  LL_ATON_LIB_UNUSED(nn_instance);
 
   /* *** MCU cache invalidate (only) operation (HW, whole range) *** */
   /*     memory pool: 1 */
@@ -273,9 +288,10 @@ static void _ec_blob_cache_start_func_57(const void *epoch_block) {
 /* scheduling epoch=60   nodes=1   ------------------------------------------------------------------- */
 
 
-static void LL_ATON_End_EpochBlock_60(const void *epoch_block)
+static void LL_ATON_End_EpochBlock_60(const LL_ATON_RT_EpochBlockItem_t *epoch_block, const NN_Instance_TypeDef *nn_instance)
 {
   LL_ATON_LIB_UNUSED(epoch_block);
+  LL_ATON_LIB_UNUSED(nn_instance);
 
 
 /* Unit= 27 [PROCESSOR 0] */
@@ -378,8 +394,9 @@ static void LL_ATON_End_EpochBlock_60(const void *epoch_block)
 // Epoch Controller Blob (name='_ec_blob_network_61') micro instructions needed
 
 // Epoch Controller Blob (name='_ec_blob_network_61') start function
-static void _ec_blob_cache_start_func_61(const void *epoch_block) {
+static void _ec_blob_cache_start_func_61(const LL_ATON_RT_EpochBlockItem_t *epoch_block, const NN_Instance_TypeDef *nn_instance) {
   LL_ATON_LIB_UNUSED(epoch_block);
+  LL_ATON_LIB_UNUSED(nn_instance);
 
   /* *** MCU cache invalidate (only) operation (HW, whole range) *** */
   /*     memory pool: 1 */
@@ -393,9 +410,10 @@ static void _ec_blob_cache_start_func_61(const void *epoch_block) {
 /* scheduling epoch=64   nodes=1   ------------------------------------------------------------------- */
 
 
-static void LL_ATON_End_EpochBlock_64(const void *epoch_block)
+static void LL_ATON_End_EpochBlock_64(const LL_ATON_RT_EpochBlockItem_t *epoch_block, const NN_Instance_TypeDef *nn_instance)
 {
   LL_ATON_LIB_UNUSED(epoch_block);
+  LL_ATON_LIB_UNUSED(nn_instance);
 
 
 /* Unit= 27 [PROCESSOR 0] */
@@ -498,8 +516,9 @@ static void LL_ATON_End_EpochBlock_64(const void *epoch_block)
 // Epoch Controller Blob (name='_ec_blob_network_65') micro instructions needed
 
 // Epoch Controller Blob (name='_ec_blob_network_65') start function
-static void _ec_blob_cache_start_func_65(const void *epoch_block) {
+static void _ec_blob_cache_start_func_65(const LL_ATON_RT_EpochBlockItem_t *epoch_block, const NN_Instance_TypeDef *nn_instance) {
   LL_ATON_LIB_UNUSED(epoch_block);
+  LL_ATON_LIB_UNUSED(nn_instance);
 
   /* *** MCU cache invalidate (only) operation (HW, whole range) *** */
   /*     memory pool: 1 */
@@ -512,9 +531,9 @@ static void _ec_blob_cache_start_func_65(const void *epoch_block) {
 
 /* scheduling DONE                 ------------------------------------------------------------------- */
 
-const EpochBlock_ItemTypeDef *LL_ATON_EpochBlockItems_network(void) {
+const LL_ATON_RT_EpochBlockItem_t *LL_ATON_EpochBlockItems_network(void) {
 
-  static const EpochBlock_ItemTypeDef ll_atonn_rt_epoch_block_array[] = {
+  static const LL_ATON_RT_EpochBlockItem_t ll_atonn_rt_epoch_block_array[] = {
     {
       .start_epoch_block = _ec_blob_cache_start_func_1,
       .end_epoch_block = NULL,
@@ -2984,7 +3003,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .offset = buff_info_Conv2D_294_weights_inflated_611_quant_offset,
     },
     {
-      .name = "Canonic_default_init_for_ROI_optional_input_661",
+      .name = "Canonic_default_init_for_ROI_optional_input_1322",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638016,
       .offset_end = 2638048,
@@ -3005,7 +3024,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1_8_1_1,
     },
     {
-      .name = "Canonic_default_init_for_SCALES_optional_input_662",
+      .name = "Canonic_default_init_for_SCALES_optional_input_1324",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638112,
       .offset_end = 2638128,
@@ -3026,7 +3045,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1_4_1_1,
     },
     {
-      .name = "Canonic_default_init_for_ROI_optional_input_663",
+      .name = "Canonic_default_init_for_ROI_optional_input_1326",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638048,
       .offset_end = 2638080,
@@ -3047,7 +3066,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1_8_1_1,
     },
     {
-      .name = "Canonic_default_init_for_SCALES_optional_input_664",
+      .name = "Canonic_default_init_for_SCALES_optional_input_1328",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638128,
       .offset_end = 2638144,
@@ -3068,7 +3087,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1_4_1_1,
     },
     {
-      .name = "Canonic_default_init_for_ROI_optional_input_665",
+      .name = "Canonic_default_init_for_ROI_optional_input_1330",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638080,
       .offset_end = 2638112,
@@ -3089,7 +3108,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1_8_1_1,
     },
     {
-      .name = "Canonic_default_init_for_SCALES_optional_input_666",
+      .name = "Canonic_default_init_for_SCALES_optional_input_1332",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638144,
       .offset_end = 2638160,
@@ -3110,7 +3129,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1_4_1_1,
     },
     {
-      .name = "Conv2D_254_off_bias_495_775_atonn_internal_scale",
+      .name = "Conv2D_254_off_bias_495_1550_atonn_internal_scale",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638160,
       .offset_end = 2638164,
@@ -3131,7 +3150,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1,
     },
     {
-      .name = "Conv2D_254_off_bias_495_775_atonn_internal_offset",
+      .name = "Conv2D_254_off_bias_495_1550_atonn_internal_offset",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638256,
       .offset_end = 2638257,
@@ -3152,7 +3171,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1,
     },
     {
-      .name = "Resize_257_777_atonn_internal_scale",
+      .name = "Resize_257_1554_atonn_internal_scale",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638176,
       .offset_end = 2638180,
@@ -3173,7 +3192,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1,
     },
     {
-      .name = "Resize_257_777_atonn_internal_offset",
+      .name = "Resize_257_1554_atonn_internal_offset",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638272,
       .offset_end = 2638273,
@@ -3194,7 +3213,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1,
     },
     {
-      .name = "Conv2D_265_off_bias_513_781_atonn_internal_scale",
+      .name = "Conv2D_265_off_bias_513_1562_atonn_internal_scale",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638192,
       .offset_end = 2638196,
@@ -3215,7 +3234,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1,
     },
     {
-      .name = "Conv2D_265_off_bias_513_781_atonn_internal_offset",
+      .name = "Conv2D_265_off_bias_513_1562_atonn_internal_offset",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638288,
       .offset_end = 2638289,
@@ -3236,7 +3255,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1,
     },
     {
-      .name = "Resize_269_783_atonn_internal_scale",
+      .name = "Resize_269_1566_atonn_internal_scale",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638208,
       .offset_end = 2638212,
@@ -3257,7 +3276,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1,
     },
     {
-      .name = "Resize_269_783_atonn_internal_offset",
+      .name = "Resize_269_1566_atonn_internal_offset",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638304,
       .offset_end = 2638305,
@@ -3278,7 +3297,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1,
     },
     {
-      .name = "Conv2D_277_off_bias_531_787_atonn_internal_scale",
+      .name = "Conv2D_277_off_bias_531_1574_atonn_internal_scale",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638224,
       .offset_end = 2638228,
@@ -3299,7 +3318,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1,
     },
     {
-      .name = "Conv2D_277_off_bias_531_787_atonn_internal_offset",
+      .name = "Conv2D_277_off_bias_531_1574_atonn_internal_offset",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638320,
       .offset_end = 2638321,
@@ -3320,7 +3339,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1,
     },
     {
-      .name = "Resize_281_789_atonn_internal_scale",
+      .name = "Resize_281_1578_atonn_internal_scale",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638240,
       .offset_end = 2638244,
@@ -3341,7 +3360,7 @@ const LL_Buffer_InfoTypeDef *LL_ATON_Input_Buffers_Info_network(void)
       .shape = buff_info__shape_1,
     },
     {
-      .name = "Resize_281_789_atonn_internal_offset",
+      .name = "Resize_281_1578_atonn_internal_offset",
       .addr_base = {(unsigned char *)(0x70380000UL) /* Equivalent hex address = 0x70380000UL */},
       .offset_start = 2638336,
       .offset_end = 2638337,

@@ -40,7 +40,7 @@ typedef struct pd_model_static_param {
   float32_t iou_threshold;
   uint32_t nb_total_boxes;
   uint32_t max_boxes_limit;
-  pd_pp_point_t *pAnchors;
+  const pd_pp_point_t *pAnchors;
   float32_t boxe_scale;
   float32_t proba_scale;
   int8_t boxe_zp;

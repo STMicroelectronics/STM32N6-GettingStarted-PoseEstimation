@@ -103,15 +103,16 @@ BSP_LCD_LayerConfig_t LayerConfig = {0};
 
 #define ALIGN_TO_16(value) (((value) + 15) & ~15)
 
-/* for models not multiple of 16; needs a working buffer */
+/* When NN input dimensions are not a multiple of 16, the DCMIPP output needs cropping */
 #if (STAI_NETWORK_IN_1_WIDTH * STAI_NETWORK_IN_1_CHANNEL) != ALIGN_TO_16(STAI_NETWORK_IN_1_WIDTH * STAI_NETWORK_IN_1_CHANNEL)
+#define DCMIPP_NN_NEEDS_CROP 1
 #define DCMIPP_OUT_NN_LEN (ALIGN_TO_16(STAI_NETWORK_IN_1_WIDTH * STAI_NETWORK_IN_1_CHANNEL) * STAI_NETWORK_IN_1_HEIGHT)
 #define DCMIPP_OUT_NN_BUFF_LEN (DCMIPP_OUT_NN_LEN + 32 - DCMIPP_OUT_NN_LEN%32)
 
 __attribute__ ((aligned (32)))
-uint8_t dcmipp_out_nn[DCMIPP_OUT_NN_BUFF_LEN];
+static uint8_t dcmipp_out_nn[DCMIPP_OUT_NN_BUFF_LEN];
 #else
-uint8_t *dcmipp_out_nn;
+#define DCMIPP_NN_NEEDS_CROP 0
 #endif
 
 /* model */
@@ -137,7 +138,6 @@ static void set_clk_sleep_mode(void);
 static void IAC_Config(void);
 static void Display_WelcomeScreen(void);
 static void Hardware_init(void);
-static void Run_Inference(stai_network *network_instance);
 static void NeuralNetwork_init(uint32_t *nn_in_length, stai_ptr *nn_out, stai_size *number_output, int32_t nn_out_len[]);
 
 
@@ -150,24 +150,7 @@ int main(void)
 {
   Hardware_init();
 
-  /*** App header *************************************************************/
-  printf("========================================\n");
-  printf("STM32N6-GettingStarted-PoseEstimation %s (%s)\n", APP_VERSION_STRING, APP_GIT_SHA1_STRING);
-  printf("Build date & time: %s %s\n", __DATE__, __TIME__);
-  #if defined(__GNUC__)
-  printf("Compiler: GCC %d.%d.%d\n", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-#elif defined(__ICCARM__)
-  printf("Compiler: IAR EWARM %d.%d.%d\n", __VER__ / 1000000, (__VER__ / 1000) % 1000 ,__VER__ % 1000);
-#else
-  printf("Compiler: Unknown\n");
-#endif
-  printf("HAL: %lu.%lu.%lu\n", __STM32N6xx_HAL_VERSION_MAIN, __STM32N6xx_HAL_VERSION_SUB1, __STM32N6xx_HAL_VERSION_SUB2);
-  printf("STEdgeAI Tools: %d.%d.%d\n", STAI_TOOLS_VERSION_MAJOR, STAI_TOOLS_VERSION_MINOR, STAI_TOOLS_VERSION_MICRO);
-  printf("NN model: %s\n", STAI_NETWORK_ORIGIN_MODEL_NAME);
-  printf("========================================\n");
-
   /*** NN Init ****************************************************************/
-  uint32_t pitch_nn = 0;
   uint32_t nn_in_len = 0;
   stai_size number_output = 0;
   stai_ptr nn_out[STAI_NETWORK_OUT_NUM] = {0};
@@ -184,6 +167,7 @@ int main(void)
   app_postprocess_init(&pp_params, &info);
 
   /*** Camera Init ************************************************************/
+  uint32_t pitch_nn = 0;
   CameraPipeline_Init(&lcd_bg_area.XSize, &lcd_bg_area.YSize, &pitch_nn);
 
   LCD_init();
@@ -191,42 +175,54 @@ int main(void)
   /* Start LCD Display camera pipe stream */
   CameraPipeline_DisplayPipe_Start(lcd_bg_buffer, CMW_MODE_CONTINUOUS);
 
+  /*** App header *************************************************************/
+  printf("========================================\n");
+  printf("STM32N6-GettingStarted-PoseEstimation %s (%s)\n", APP_VERSION_STRING, APP_GIT_SHA1_STRING);
+  printf("Build date & time: %s %s\n", __DATE__, __TIME__);
+#if defined(__GNUC__)
+  printf("Compiler: GCC %d.%d.%d\n", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#elif defined(__ICCARM__)
+  printf("Compiler: IAR EWARM %d.%d.%d\n", __VER__ / 1000000, (__VER__ / 1000) % 1000 ,__VER__ % 1000);
+#else
+  printf("Compiler: Unknown\n");
+#endif
+  printf("HAL: %lu.%lu.%lu\n", __STM32N6xx_HAL_VERSION_MAIN, __STM32N6xx_HAL_VERSION_SUB1, __STM32N6xx_HAL_VERSION_SUB2);
+  printf("STEdgeAI Tools: %d.%d.%d\n", STAI_TOOLS_VERSION_MAJOR, STAI_TOOLS_VERSION_MINOR, STAI_TOOLS_VERSION_MICRO);
+  printf("NN model: %s\n", STAI_NETWORK_ORIGIN_MODEL_NAME);
+  printf("========================================\n");
+
   /*** App Loop ***************************************************************/
   while (1)
   {
     CameraPipeline_IspUpdate();
 
-    if (pitch_nn != (STAI_NETWORK_IN_1_WIDTH * STAI_NETWORK_IN_1_CHANNEL))
-    {
-      /* Start NN camera single capture Snapshot */
-      CameraPipeline_NNPipe_Start(dcmipp_out_nn, CMW_MODE_SNAPSHOT);
-    }
-    else
-    {
-      /* Start NN camera single capture Snapshot */
-      CameraPipeline_NNPipe_Start(nn_in, CMW_MODE_SNAPSHOT);
-    }
+#if DCMIPP_NN_NEEDS_CROP
+    /* Start NN camera single capture Snapshot into intermediate buffer */
+    CameraPipeline_NNPipe_Start(dcmipp_out_nn, CMW_MODE_SNAPSHOT);
+#else
+    /* Start NN camera single capture Snapshot directly into NN input */
+    CameraPipeline_NNPipe_Start(nn_in, CMW_MODE_SNAPSHOT);
+#endif
 
     while (cameraFrameReceived == 0) {};
     cameraFrameReceived = 0;
 
     uint32_t ts[2] = { 0 };
 
-    if (pitch_nn != (STAI_NETWORK_IN_1_WIDTH * STAI_NETWORK_IN_1_CHANNEL))
-    {
-      SCB_InvalidateDCache_by_Addr(dcmipp_out_nn, sizeof(dcmipp_out_nn));
+#if DCMIPP_NN_NEEDS_CROP
     /*
-     * Crop the image if the neural network (NN) input dimensions are not a multiple of 16.
-     * The DCMIPP hardware requires the output image dimensions to be multiples of 16.
-     * This ensures compatibility with the NN input dimensions.
+     * Crop the image: the DCMIPP hardware requires output dimensions to be
+     * multiples of 16, so we crop the padded buffer into the NN input buffer.
      */
-      img_crop(dcmipp_out_nn, nn_in, pitch_nn, STAI_NETWORK_IN_1_WIDTH, STAI_NETWORK_IN_1_HEIGHT, STAI_NETWORK_IN_1_CHANNEL);
-      SCB_CleanInvalidateDCache_by_Addr(nn_in, nn_in_len);
-    }
+    SCB_InvalidateDCache_by_Addr(dcmipp_out_nn, sizeof(dcmipp_out_nn));
+    img_crop(dcmipp_out_nn, nn_in, pitch_nn, STAI_NETWORK_IN_1_WIDTH, STAI_NETWORK_IN_1_HEIGHT, STAI_NETWORK_IN_1_CHANNEL);
+    SCB_CleanInvalidateDCache_by_Addr(nn_in, nn_in_len);
+#endif
 
     ts[0] = HAL_GetTick();
     /* run ATON inference */
-    Run_Inference(network_context);
+    ret = stai_network_run(network_context, STAI_MODE_SYNC);
+    assert(ret == 0);
     ts[1] = HAL_GetTick();
 
     int32_t ret = app_postprocess_run((void **) nn_out, number_output, &pp_output, &pp_params);
@@ -288,19 +284,6 @@ static void Hardware_init(void)
   IAC_Config();
   set_clk_sleep_mode();
 
-}
-
-static void Run_Inference(stai_network *network_instance) {
-  stai_return_code ret;
-
-  do {
-    ret = stai_network_run(network_instance, STAI_MODE_ASYNC);
-    if (ret == STAI_RUNNING_WFE)
-      LL_ATON_OSAL_WFE();
-  } while (ret == STAI_RUNNING_WFE || ret == STAI_RUNNING_NO_WFE);
-
-  ret = stai_ext_network_new_inference(network_instance);
-  assert(ret == STAI_SUCCESS);
 }
 
 static void NeuralNetwork_init(uint32_t *nn_in_length, stai_ptr *nn_out, stai_size *number_output, int32_t nn_out_len[])

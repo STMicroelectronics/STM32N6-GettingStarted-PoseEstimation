@@ -18,9 +18,10 @@
 
  #include "app_postprocess.h"
  #include "app_config.h"
- #include <assert.h>
 
  #if POSTPROCESS_TYPE == POSTPROCESS_CUSTOM
+ #include <assert.h>
+ 
  int32_t app_postprocess_init(void *params_postprocess, stai_network_info *NN_Info)
  {
  // @User must implement its own app_postprocess_init
